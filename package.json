@@ -1,0 +1,14 @@
+{
+    "name": "caldwell",
+    "description": "Project Caldwell",
+    "license" : "MIT",
+    "repository" :
+    { 
+        "type" : "git",
+        "url" : "https://github.com/HSAR/Caldwell.git"
+    },
+    "version": "0.0.1",
+    "devDependencies": {
+      "excalibur": "0.7.1"
+    }
+}
