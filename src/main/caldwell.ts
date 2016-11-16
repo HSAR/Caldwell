@@ -1,7 +1,7 @@
 /// <reference path="../../typings/index.d.ts" />
 /// <reference path="../../node_modules/excalibur/dist/excalibur.d.ts" />
 
-import excalibur = require("excalibur");
+var excalibur = require("excalibur");
 
 var game = new ex.Engine({
     width: 800,
