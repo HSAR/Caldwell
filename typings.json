@@ -1,6 +1,7 @@
 {
   "globalDependencies": {
     "chai": "registry:dt/chai#3.4.0+20160601211834",
+    "electron/github-electron": "registry:dt/electron/github-electron#1.4.4+20161022024109",
     "mocha": "registry:dt/mocha#2.2.5+20161028141524",
     "node": "registry:dt/node#6.0.0+20160613154055"
   }

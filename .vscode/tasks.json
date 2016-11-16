@@ -11,7 +11,7 @@
             "taskName": "build",
             "args": ["default"],
 			"isBuildCommand": true,
-			"showOutput": "always",
+			"showOutput": "silent",
             "problemMatcher": "$tsc"
         }
     ]

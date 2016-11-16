@@ -1,9 +1,10 @@
 /// <reference path="../../typings/index.d.ts" />
 /// <reference path="../../node_modules/excalibur/dist/excalibur.d.ts" />
 
-var excalibur = require("excalibur");
+import * as ex from "excalibur";
+import { Engine } from "excalibur";
 
-var game = new ex.Engine({
+var game = new Engine({
     width: 800,
     height: 600
 });
