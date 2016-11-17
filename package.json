@@ -8,8 +8,9 @@
   },
   "version": "0.0.1",
   "dependencies": {
+    "electron": "^1.4.1",
     "excalibur": "0.7.1",
-    "electron": "^1.4.1"
+    "socket.io": "^1.5.1"
   },
   "devDependencies": {
     "chai": "^3.5.0",
