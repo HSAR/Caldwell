@@ -27,6 +27,6 @@ npm link electron
 
 ```sh
 gulp
-electron ./build/main/main.js
+npm run launch
 ```
 
