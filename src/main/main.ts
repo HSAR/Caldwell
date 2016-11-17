@@ -1,12 +1,8 @@
 /// <reference path="../../typings/index.d.ts" />
 
-//import { app, BrowserWindow } from "electron";
-const electron = require('electron');
-const app = electron.app;  
-const BrowserWindow = electron.BrowserWindow; 
+import { app, BrowserWindow } from "electron"; 
 
 console.log("Caldwell launch started.");
-console.log(require.resolve('electron'));
 
 // Keep a global reference of the window object, 
 // if you don't, the window will be closed automatically
@@ -41,6 +37,7 @@ app.on('ready', function() {
         // app supports multi windows, this is the time
         // when you should delete the corresponding element.
         mainWindow = null;
+        console.log("Caldwell closed.");
     });
 });
 

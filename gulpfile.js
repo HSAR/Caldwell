@@ -17,9 +17,15 @@ gulp.task("build", function () {
         .pipe(gulp.dest("build"));
 });
 
-gulp.task("copyBuildResources", function() {
+gulp.task("copyMainResources", function() {
     return gulp.src("./src/main/**/!(*.js|*.ts)")
         .pipe(gulp.dest("build/main"));
+});
+
+// TODO: Replace/augment this with a general-purpose "package" task that copies all node modules
+gulp.task("copyExcalibur", function() {
+    return gulp.src("./node_modules/excalibur/dist")
+        .pipe(gulp.dest("build/main/excalibur"));
 });
 
 gulp.task("copyTestResources", function() {
@@ -27,7 +33,7 @@ gulp.task("copyTestResources", function() {
         .pipe(gulp.dest("build/test"));
 });
 
-gulp.task("copyAllResources", gulp.parallel("copyBuildResources", "copyTestResources"));
+gulp.task("copyAllResources", gulp.parallel("copyMainResources", "copyExcalibur", "copyTestResources"));
 
 gulp.task("clean", function (done) {
     rimraf(_buildRoot, done);

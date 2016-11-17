@@ -7,9 +7,12 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "Launch Caldwell",
             "program": "${workspaceRoot}/build/main/main.js",
             "cwd": "${workspaceRoot}/build/main",
+            "stopOnEntry": false,
+            "args": [],
+            "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
             "outFiles": [],
             "sourceMaps": true
         },
