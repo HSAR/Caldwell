@@ -90,31 +90,12 @@ game.start(loader).then(() => {
         casing.vel.setTo(velocity.x, velocity.y);
         casing.rotation = gunPort.getWorldRotation();
         //casing.rx = -0.5;
+        
 
         setPhysics(casing, SupportedShape.Box, 0.1);
 
-        // Wire up to the update event
-        casing.on('update', function () {
-            // If the ball collides with the left side
-            // of the screen reverse the x velocity
-            if (this.pos.x < (this.getWidth() / 2)) {
-                this.vel.x *= -1;
-            }
-
-            // If the ball collides with the right side
-            // of the screen reverse the x velocity
-            if (this.pos.x + (this.getWidth() / 2) > game.getWidth()) {
-                this.vel.x *= -1;
-            }
-
-            // If the ball collides with the top
-            // of the screen reverse the y velocity
-            if (this.pos.y < 0) {
-                this.vel.y *= -1;
-            }
-        });
-
         game.add(casing);
+        casingActors.push(casing);
         if (casingActors.length > 10) {
             var oldestCasing:ex.Actor = casingActors.shift();
             oldestCasing.kill();
