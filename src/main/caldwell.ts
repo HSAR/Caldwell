@@ -3,10 +3,11 @@
 
 import * as ex from "excalibur";
 import { Engine, IEngineOptions, Texture } from "excalibur";
+import * as p2 from 'p2';
 
 var game = new Engine({
-    width: 400,
-    height: 300
+    width: 640,
+    height: 480
 });
 
 // Setup input
@@ -18,21 +19,41 @@ var txGun:Texture = new Texture("./assets/materials/stoner63.png");
 var txCasing:Texture = new Texture("./assets/materials/casing.png");
 var loader = new ex.Loader([txCursor, txGun, txCasing]);
 
+// Setup physics world
+var world = new p2.World({
+    gravity:[0, 10] // minus values cause things to fall upwards
+});
+var fixedTimeStep = 1 / 60; // seconds
+var maxSubSteps = 10; // Max sub steps to catch up with the wall clock
+var simulatedBodies:Map<number, p2.Body> = new Map<number, p2.Body>();
+
+var groundBody = new p2.Body({
+    mass: 0, // Setting mass to 0 makes it static
+    position: [0, game.getHeight()],
+    angle: Math.PI
+});
+var groundShape = new p2.Plane();
+groundBody.addShape(groundShape);
+world.addBody(groundBody);
+
 // Start the engine to begin the game.
 game.start(loader).then(() => {
     // Crosshairs
-    var cursor = new ex.Actor(game.getWidth() / 2, game.getHeight() / 2, 64, 64);
     var cursorSprite:ex.Sprite = txCursor.asSprite();
-    setDimensions(cursorSprite, cursor);
+    var cursor = new ex.Actor(game.getWidth() / 2, game.getHeight() / 2, cursorSprite.width, cursorSprite.height);
+    setDimensions(cursor, 64, 0);
+    matchDimensions(cursorSprite, cursor);
     cursor.addDrawing(cursorSprite);
     game.add(cursor);
 
     // Gun
-    var gun = new ex.Actor(100, game.getHeight() / 2, 0, 0);
     var gunSprite:ex.Sprite = txGun.asSprite();
-    setDimensions(gunSprite, gun);
+    var gun = new ex.Actor(100, game.getHeight() / 2, gunSprite.width, gunSprite.height);
+    var gunPort = new ex.Actor(-16, -14, 1, 1);
+    gun.add(gunPort);
+    setDimensions(gun, 180, 0);
+    matchDimensions(gunSprite, gun);
     gun.addDrawing(gunSprite);
-    gun.collisionType = ex.CollisionType.Elastic;
     game.add(gun);
 
     // Casing
@@ -49,57 +70,71 @@ game.start(loader).then(() => {
         gun.rotation = diffVec.toAngle();
     });
 
-    var gunFiring:boolean = false;
-    game.input.pointers.primary.on('down', (evt:ex.Input.PointerEvent) => {
-        gunFiring = true;
-    });
     game.input.pointers.primary.on('up', (evt:ex.Input.PointerEvent) => {
-        gunFiring = false;
+        let casing = new ex.Actor(gunPort.getWorldPos().x - 15, gunPort.getWorldPos().y - 15, casingSprite.width, casingSprite.height);
+        setDimensions(casing, 10, 0);
+        matchDimensions(casingSprite, casing);
+        casing.addDrawing(casingSprite);
+
+        // Set motion that will be picked up by p2
+        let velocity:ex.Vector = new ex.Vector(-1, -50);
+        velocity = velocity.rotate(gunPort.getWorldRotation(), ex.Vector.Zero);
+        casing.vel.setTo(velocity.x, velocity.y);
+        casing.rotation = gunPort.getWorldRotation();
+        //casing.rx = -0.5;
+
+        setPhysics(casing, SupportedShape.Box, 0.1);
+
+        // Wire up to the update event
+        casing.on('update', function () {
+            // If the ball collides with the left side
+            // of the screen reverse the x velocity
+            if (this.pos.x < (this.getWidth() / 2)) {
+                this.vel.x *= -1;
+            }
+
+            // If the ball collides with the right side
+            // of the screen reverse the x velocity
+            if (this.pos.x + (this.getWidth() / 2) > game.getWidth()) {
+                this.vel.x *= -1;
+            }
+
+            // If the ball collides with the top
+            // of the screen reverse the y velocity
+            if (this.pos.y < 0) {
+                this.vel.y *= -1;
+            }
+        });
+
+        game.add(casing);
+        if (casingActors.length > 10) {
+            var oldestCasing:ex.Actor = casingActors.shift();
+            oldestCasing.kill();
+        }
     });
 
     game.on('postupdate', (evt:ex.PostUpdateEvent) => {
-        // If the mouse button is down, fire a casing from the gun
-        if (gunFiring /*&& (new Date()).getTime() % 40 == 0*/) {
-            let casing = new ex.Actor(gun.x - 15, gun.y - 15, 10, 0);
-            casing.rotation = gun.rotation + (Math.PI / 2);
-            setDimensions(casingSprite, casing);
-            casing.addDrawing(casingSprite);
-            casing.collisionType = ex.CollisionType.Elastic;
-            casing.vel.setTo(-1, -50);
-            casing.rx = -1;
+        // Step physics simulation
+        world.step(fixedTimeStep, evt.delta, maxSubSteps);
 
-            // Wire up to the update event
-            casing.on('update', function () {
-                // If the ball collides with the left side
-                // of the screen reverse the x velocity
-                if (this.pos.x < (this.getWidth() / 2)) {
-                    this.vel.x *= -1;
-                }
+        // Update actors in world
+        for (let actor of game.currentScene.children) {
+            // If actor is simulated
+            if (simulatedBodies.has(actor.id)) {
+                let actorPhysicsBody:p2.Body = simulatedBodies.get(actor.id)
+                // Excalibur has reversed Y axis
+                actor.pos.setTo(actorPhysicsBody.interpolatedPosition[0], actorPhysicsBody.interpolatedPosition[1]);
+                actor.rotation = actorPhysicsBody.interpolatedAngle;
 
-                // If the ball collides with the right side
-                // of the screen reverse the x velocity
-                if (this.pos.x + (this.getWidth() / 2) > game.getWidth()) {
-                    this.vel.x *= -1;
-                }
-
-                // If the ball collides with the top
-                // of the screen reverse the y velocity
-                if (this.pos.y < 0) {
-                    this.vel.y *= -1;
-                }
-            });
-
-            game.add(casing);
-            if (casingActors.length > 100) {
-                var oldestCasing:ex.Actor = casingActors.shift();
-                oldestCasing.kill();
+                // Do not use Excalibur delta-pos or delta-rotation
+                actor.vel.setTo(0, 0);
+                actor.rx = 0;
             }
-
         }
     });
 });
 
-function setDimensions(sprite:ex.Sprite, actor:ex.Actor) {
+function matchDimensions(sprite:ex.Sprite, actor:ex.Actor):void {
     if (actor.getWidth() > 0) {
         sprite.scale.x = actor.getWidth() / sprite.naturalWidth;
     }
@@ -108,10 +143,10 @@ function setDimensions(sprite:ex.Sprite, actor:ex.Actor) {
     }
 
     // If one scale is missing, lock aspect ratio
-    if (sprite.scale.x == 0 && sprite.scale.y !== 0) {
+    if (sprite.scale.x == 1 && sprite.scale.y !== 1) {
         sprite.scale.x = sprite.scale.y;
     }
-    if (sprite.scale.y == 0 && sprite.scale.x !== 0) {
+    if (sprite.scale.y == 1 && sprite.scale.x !== 1) {
         sprite.scale.y = sprite.scale.x;
     }
 
@@ -120,4 +155,63 @@ function setDimensions(sprite:ex.Sprite, actor:ex.Actor) {
         actor.setWidth(sprite.swidth);
         actor.setHeight(sprite.sheight);
     }
+}
+
+function setDimensions(actor:ex.Actor, x:number, y:number):void {
+    let scaleX, scaleY:number;
+    if (x > 0) {
+        scaleX = x / actor.getWidth();
+    }
+    if (y > 0) {
+        scaleY = y / actor.getHeight();
+    }
+
+    // If one scale is missing, lock aspect ratio
+    if (x == 0) {
+        scaleX = scaleY;
+    }
+    if (y == 0) {
+        scaleY = scaleX;
+    }
+
+    recursiveSetScale(actor, scaleX, scaleY);
+}
+
+function recursiveSetScale(actor:ex.Actor, scaleX:number, scaleY:number):void {
+    actor.scale.setTo(scaleX, scaleY);
+    for (let child of actor.children) {
+        recursiveSetScale(child, scaleX, scaleY);
+    };
+}
+
+enum SupportedShape { Box, Convex, Concave };
+
+function setPhysics(actor:ex.Actor, shape:SupportedShape, mass:number):void {
+    let collisionShape:p2.Shape;
+    switch (shape)
+    {
+        case SupportedShape.Box:
+            collisionShape = new p2.Box({ width: actor.getWidth(), height: actor.getHeight() });
+            break;
+        default:
+            throw new Error('Unsupported physics shape');
+    }
+
+    let collisionBody = new p2.Body({
+        mass: mass, // Setting mass to 0 makes it static
+        position: [actor.x, actor.y],
+        angle: actor.rotation,
+        velocity: [actor.vel.x, actor.vel.y],
+        angularVelocity: actor.rx
+    });
+    collisionBody.addShape(collisionShape);
+    world.addBody(collisionBody);
+    simulatedBodies.set(actor.id, collisionBody);
+
+    // When the actor is killed, remove this body from simulation
+    actor.on('kill', (evt:ex.KillEvent) => {
+        world.removeBody(simulatedBodies.get(actor.id));
+        simulatedBodies.delete(actor.id);
+        actor.visible = false;
+    })
 }
