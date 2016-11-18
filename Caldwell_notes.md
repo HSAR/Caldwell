@@ -1,5 +1,9 @@
 ## Development Notes (TODOs)
 
+- debug support
+  - How do we attach the vscode debugger to electron?
+  - Pass through console log messages
+
 - Physics engine integration with Excalibur
   - <del>Reposition ex.Actor objects on screen every update</del>
   - Remove objects from physics simulation on kill (onKill doesn't seem to work)
