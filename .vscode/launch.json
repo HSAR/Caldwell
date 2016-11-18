@@ -11,7 +11,7 @@
             "program": "${workspaceRoot}/build/main/main.js",
             "cwd": "${workspaceRoot}/build/main",
             "stopOnEntry": false,
-            "args": [],
+            // "args": ["--debug-brk=5859"],
             "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
             "outFiles": [],
             "sourceMaps": true
