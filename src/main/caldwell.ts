@@ -26,7 +26,6 @@ var world = new p2.World({
 var fixedTimeStep = 1 / 60; // seconds
 var maxSubSteps = 10; // Max sub steps to catch up with the wall clock
 var bodies_simulated:Map<number, p2.Body> = new Map<number, p2.Body>();
-var bodies_unsimulated:Map<number, p2.Body> = new Map<number, p2.Body>();
 
 var groundBody = new p2.Body({
     mass: 0, // Setting mass to 0 makes it static
@@ -55,6 +54,7 @@ game.start(loader).then(() => {
     setDimensions(gun, 180, 0);
     matchDimensions(gunSprite, gun);
     gun.addDrawing(gunSprite);
+    setPhysics(gun, SupportedShape.Box, 0);
     game.add(gun);
     
     let gunShape:p2.Shape;
@@ -62,7 +62,6 @@ game.start(loader).then(() => {
     let gunBody = createBodyFromActor(gun, 0);
     gunBody.addShape(gunShape);
     world.addBody(gunBody);
-    bodies_unsimulated.set(gun.id, gunBody);
 
     // Casing
     var casingActors:ex.Actor[] = [];
@@ -75,7 +74,7 @@ game.start(loader).then(() => {
 
         // Gun points at cursor
         var diffVec:ex.Vector = new ex.Vector(evt.x - gun.x, evt.y - gun.y)
-        gun.rotation = diffVec.toAngle();
+        bodies_simulated.get(gun.id).angle = diffVec.toAngle();
     });
 
     game.input.pointers.primary.on('up', (evt:ex.Input.PointerEvent) => {
@@ -118,15 +117,6 @@ game.start(loader).then(() => {
                 // Do not use Excalibur delta-pos or delta-rotation
                 actor.vel.setTo(0, 0);
                 actor.rx = 0;
-            }
-            // If actor not simulated, ex position => p2 position
-            if (bodies_unsimulated.has(actor.id)) {
-                let actorPhysicsBody:p2.Body = bodies_unsimulated.get(actor.id)
-
-                let actorWorldPos:ex.Vector = actor.getWorldPos();
-                actorPhysicsBody.position = [actorWorldPos.x, actorWorldPos.y];
-                actorPhysicsBody.angle = actor.rotation;
-
             }
         }
     });
