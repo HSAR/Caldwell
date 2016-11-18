@@ -25,7 +25,8 @@ var world = new p2.World({
 });
 var fixedTimeStep = 1 / 60; // seconds
 var maxSubSteps = 10; // Max sub steps to catch up with the wall clock
-var simulatedBodies:Map<number, p2.Body> = new Map<number, p2.Body>();
+var bodies_simulated:Map<number, p2.Body> = new Map<number, p2.Body>();
+var bodies_unsimulated:Map<number, p2.Body> = new Map<number, p2.Body>();
 
 var groundBody = new p2.Body({
     mass: 0, // Setting mass to 0 makes it static
@@ -55,6 +56,13 @@ game.start(loader).then(() => {
     matchDimensions(gunSprite, gun);
     gun.addDrawing(gunSprite);
     game.add(gun);
+    
+    let gunShape:p2.Shape;
+    gunShape = new p2.Box({ width: gun.getWidth(), height: gun.getHeight() });
+    let gunBody = createBodyFromActor(gun, 0);
+    gunBody.addShape(gunShape);
+    world.addBody(gunBody);
+    bodies_unsimulated.set(gun.id, gunBody);
 
     // Casing
     var casingActors:ex.Actor[] = [];
@@ -119,9 +127,9 @@ game.start(loader).then(() => {
 
         // Update actors in world
         for (let actor of game.currentScene.children) {
-            // If actor is simulated
-            if (simulatedBodies.has(actor.id)) {
-                let actorPhysicsBody:p2.Body = simulatedBodies.get(actor.id)
+            // If actor is simulated, p2 position => ex position
+            if (bodies_simulated.has(actor.id)) {
+                let actorPhysicsBody:p2.Body = bodies_simulated.get(actor.id)
                 // Excalibur has reversed Y axis
                 actor.pos.setTo(actorPhysicsBody.interpolatedPosition[0], actorPhysicsBody.interpolatedPosition[1]);
                 actor.rotation = actorPhysicsBody.interpolatedAngle;
@@ -129,6 +137,15 @@ game.start(loader).then(() => {
                 // Do not use Excalibur delta-pos or delta-rotation
                 actor.vel.setTo(0, 0);
                 actor.rx = 0;
+            }
+            // If actor not simulated, ex position => p2 position
+            if (bodies_unsimulated.has(actor.id)) {
+                let actorPhysicsBody:p2.Body = bodies_unsimulated.get(actor.id)
+
+                let actorWorldPos:ex.Vector = actor.getWorldPos();
+                actorPhysicsBody.position = [actorWorldPos.x, actorWorldPos.y];
+                actorPhysicsBody.angle = actor.rotation;
+
             }
         }
     });
@@ -184,9 +201,19 @@ function recursiveSetScale(actor:ex.Actor, scaleX:number, scaleY:number):void {
     };
 }
 
+function createBodyFromActor(actor:ex.Actor, mass:number = 1) {
+    return new p2.Body({
+        mass: mass, // Setting mass to 0 makes it static
+        position: [actor.x, actor.y],
+        angle: actor.rotation,
+        velocity: [actor.vel.x, actor.vel.y],
+        angularVelocity: actor.rx
+    });
+}
+
 enum SupportedShape { Box, Convex, Concave };
 
-function setPhysics(actor:ex.Actor, shape:SupportedShape, mass:number):void {
+function setPhysics(actor:ex.Actor, shape:SupportedShape, mass:number = 1):void {
     let collisionShape:p2.Shape;
     switch (shape)
     {
@@ -197,21 +224,15 @@ function setPhysics(actor:ex.Actor, shape:SupportedShape, mass:number):void {
             throw new Error('Unsupported physics shape');
     }
 
-    let collisionBody = new p2.Body({
-        mass: mass, // Setting mass to 0 makes it static
-        position: [actor.x, actor.y],
-        angle: actor.rotation,
-        velocity: [actor.vel.x, actor.vel.y],
-        angularVelocity: actor.rx
-    });
+    let collisionBody = createBodyFromActor(actor, mass);
     collisionBody.addShape(collisionShape);
     world.addBody(collisionBody);
-    simulatedBodies.set(actor.id, collisionBody);
+    bodies_simulated.set(actor.id, collisionBody);
 
     // When the actor is killed, remove this body from simulation
     actor.on('kill', (evt:ex.KillEvent) => {
-        world.removeBody(simulatedBodies.get(actor.id));
-        simulatedBodies.delete(actor.id);
+        world.removeBody(bodies_simulated.get(actor.id));
+        bodies_simulated.delete(actor.id);
         actor.visible = false;
     })
 }
