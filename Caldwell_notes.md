@@ -1,9 +1,14 @@
 ## Development Notes (TODOs)
 
 - Physics engine integration with Excalibur
-  - Reposition ex.Actor objects on screen every update
-  - Remove objects from physics simulation on kill
+  - <del>Reposition ex.Actor objects on screen every update</del>
+  - <del>Remove objects from physics simulation on kill</del>
   - System for converting images to convex bounding boxes (will remove need to make collision meshes)
+  
+## NB
+
+- p2 co-ordinate system is upside-down relative to Excalibur's
+  - Example: To place a floor, we create a plane at 0,[game height] and rotate it 180 degrees
 
 ## Gameplay Design Notes
 
