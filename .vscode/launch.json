@@ -11,9 +11,15 @@
             "program": "${workspaceRoot}/build/main/main.js",
             "cwd": "${workspaceRoot}/build/main",
             "stopOnEntry": false,
-            // "args": ["--debug-brk=5859"],
+            "runtimeArgs": [
+                "--enable-logging"
+            ],
+            "env": {
+                "NODE_ENV": "development"
+            },
             "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
             "outFiles": [],
+            "console": "integratedTerminal",
             "sourceMaps": true
         },
         {
@@ -21,6 +27,7 @@
             "request": "attach",
             "name": "Attach to Process",
             "port": 5858,
+            "address": "localhost",
             "outFiles": [],
             "sourceMaps": true
         }
