@@ -19,7 +19,9 @@
             },
             "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
             "outFiles": [],
-            "console": "integratedTerminal",
+            // "console": "integratedTerminal",
+            "console": "internalConsole",
+            "internalConsoleOptions": "openOnSessionStart",
             "sourceMaps": true
         },
         {

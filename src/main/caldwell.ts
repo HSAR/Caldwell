@@ -1,11 +1,17 @@
 /// <reference path="../../typings/index.d.ts" />
 /// <reference path="../../node_modules/excalibur/dist/excalibur.d.ts" />
 
-import * as ex from "excalibur";
-import { Engine, IEngineOptions, Texture } from "excalibur";
-import * as p2 from 'p2';
+import path = require("path");
 
-var game = new Engine({
+import * as ex from "excalibur";
+import { Actor, Engine, IEngineOptions, Sprite, Texture, Vector } from "excalibur";
+import * as p2 from "p2";
+import { Body, Shape } from "p2";
+
+import { ActorPhysics, PhysicsWorld, SupportedShape} from "./physics";
+import { Graphics } from "./graphics";
+
+var game:Engine = new Engine({
     width: 640,
     height: 480
 });
@@ -14,196 +20,57 @@ var game = new Engine({
 // IEngineOptions.pointerScope = ex.Input.PointerScope.Canvas;
 
 // Load textures
-var txCursor:Texture = new Texture("./assets/materials/crosshairs.png");
-var txGun:Texture = new Texture("./assets/materials/stoner63.png");
-var txCasing:Texture = new Texture("./assets/materials/casing.png");
-var loader = new ex.Loader([txCursor, txGun, txCasing]);
+let graphics = new Graphics(path.join(__dirname, "assets", "materials"));
+var loader = new ex.Loader(Array.from(graphics.texturesByPath.values()));
 
 // Setup physics world
-var world = new p2.World({
-    gravity:[0, 10] // minus values cause things to fall upwards
-});
-var fixedTimeStep = 1 / 60; // seconds
-var maxSubSteps = 10; // Max sub steps to catch up with the wall clock
-var bodies_simulated:Map<number, p2.Body> = new Map<number, p2.Body>();
-
-var groundBody = new p2.Body({
-    mass: 0, // Setting mass to 0 makes it static
-    position: [0, game.getHeight()],
-    angle: Math.PI
-});
-var groundShape = new p2.Plane();
-groundBody.addShape(groundShape);
-world.addBody(groundBody);
+var physics = new PhysicsWorld(game);
+var world:p2.World = physics.world;
 
 // Start the engine to begin the game.
 game.start(loader).then(() => {
     // Crosshairs
-    var cursorSprite:ex.Sprite = txCursor.asSprite();
-    var cursor = new ex.Actor(game.getWidth() / 2, game.getHeight() / 2, cursorSprite.width, cursorSprite.height);
-    setDimensions(cursor, 64, 0);
-    matchDimensions(cursorSprite, cursor);
-    cursor.addDrawing(cursorSprite);
+    var cursor = graphics.createActorWithSprite("crosshairs.png");
+    graphics.setDimensions(cursor, 64, 0);
+    graphics.syncActorDrawingSize(cursor);
     game.add(cursor);
 
     // Gun
-    var gunSprite:ex.Sprite = txGun.asSprite();
-    var gun = new ex.Actor(100, game.getHeight() / 2, gunSprite.width, gunSprite.height);
-    var gunPort = new ex.Actor(-16, -14, 1, 1);
-    gun.add(gunPort);
-    setDimensions(gun, 180, 0);
-    matchDimensions(gunSprite, gun);
-    gun.addDrawing(gunSprite);
-    setPhysics(gun, SupportedShape.Box, 0);
-    game.add(gun);
-    
-    let gunShape:p2.Shape;
-    gunShape = new p2.Box({ width: gun.getWidth(), height: gun.getHeight() });
-    let gunBody = createBodyFromActor(gun, 0);
-    gunBody.addShape(gunShape);
-    world.addBody(gunBody);
+    var gunPhys:ActorPhysics = physics.addToPhysicsWorld(graphics.createActorWithSprite("stoner63.png"), SupportedShape.Box, 0);
+    graphics.setDimensions(gunPhys.actor, 180, 0);
+    graphics.syncActorDrawingSize(gunPhys.actor);
+    gunPhys.body.position = [game.getWidth() / 4, game.getHeight() / 2];
+    game.add(gunPhys.actor);
 
     // Casing
-    var casingActors:ex.Actor[] = [];
-    var casingSprite:ex.Sprite = txCasing.asSprite();
+    var casingActors:Actor[] = [];
 
-    game.input.pointers.primary.on('move', (evt:ex.Input.PointerEvent) => {
+    game.input.pointers.primary.on("move", (evt:ex.Input.PointerEvent) => {
         // Crosshairs on cursor
-        cursor.pos.x = evt.x;
-        cursor.pos.y = evt.y;
+        cursor.pos.setTo(evt.x, evt.y);
 
         // Gun points at cursor
-        var diffVec:ex.Vector = new ex.Vector(evt.x - gun.x, evt.y - gun.y)
-        bodies_simulated.get(gun.id).angle = diffVec.toAngle();
+        var diffVec:Vector = new Vector(evt.x - gunPhys.body.position[0], evt.y - gunPhys.body.position[1]);
+        gunPhys.body.angle = diffVec.toAngle();
     });
 
-    game.input.pointers.primary.on('up', (evt:ex.Input.PointerEvent) => {
-        let casing = new ex.Actor(gunPort.getWorldPos().x - 15, gunPort.getWorldPos().y - 15, casingSprite.width, casingSprite.height);
-        setDimensions(casing, 10, 0);
-        matchDimensions(casingSprite, casing);
-        casing.addDrawing(casingSprite);
+    game.input.pointers.primary.on("up", (evt:ex.Input.PointerEvent) => {
+        let casingPhys:ActorPhysics = physics.addToPhysicsWorld(graphics.createActorWithSprite("casing.png"), SupportedShape.Box, 0.1);;
+        graphics.setDimensions(casingPhys.actor, 10, 0);
+        graphics.syncActorDrawingSize(casingPhys.actor);
 
-        // Set motion that will be picked up by p2
-        let velocity:ex.Vector = new ex.Vector(-1, -50);
-        velocity = velocity.rotate(gunPort.getWorldRotation(), ex.Vector.Zero);
-        casing.vel.setTo(velocity.x, velocity.y);
-        casing.rotation = gunPort.getWorldRotation();
-        //casing.rx = -0.5;
-        
+        let velocity:Vector = Vector.Up;
+        velocity = velocity.rotate(gunPhys.body.angle);
+        // TODO: Fix this causing odd behaviour due to one physics body spawning inside another
+        casingPhys.body.position = gunPhys.body.position;
+        casingPhys.body.velocity = [velocity.x, velocity.y];
+        casingPhys.body.angle = gunPhys.body.angle;
 
-        setPhysics(casing, SupportedShape.Box, 0.1);
-
-        game.add(casing);
-        casingActors.push(casing);
+        game.add(casingPhys.actor);
+        casingActors.push(casingPhys.actor);
         if (casingActors.length > 10) {
-            var oldestCasing:ex.Actor = casingActors.shift();
+            var oldestCasing:Actor = casingActors.shift();
             oldestCasing.kill();
         }
     });
-
-    game.on('postupdate', (evt:ex.PostUpdateEvent) => {
-        // Step physics simulation
-        world.step(fixedTimeStep, evt.delta, maxSubSteps);
-
-        // Update actors in world
-        for (let actor of game.currentScene.children) {
-            // If actor is simulated, p2 position => ex position
-            if (bodies_simulated.has(actor.id)) {
-                let actorPhysicsBody:p2.Body = bodies_simulated.get(actor.id)
-                // Excalibur has reversed Y axis
-                actor.pos.setTo(actorPhysicsBody.interpolatedPosition[0], actorPhysicsBody.interpolatedPosition[1]);
-                actor.rotation = actorPhysicsBody.interpolatedAngle;
-
-                // Do not use Excalibur delta-pos or delta-rotation
-                actor.vel.setTo(0, 0);
-                actor.rx = 0;
-            }
-        }
-    });
 });
-
-function matchDimensions(sprite:ex.Sprite, actor:ex.Actor):void {
-    if (actor.getWidth() > 0) {
-        sprite.scale.x = actor.getWidth() / sprite.naturalWidth;
-    }
-    if (actor.getHeight() > 0) {
-        sprite.scale.y = actor.getHeight() / sprite.naturalHeight;
-    }
-
-    // If one scale is missing, lock aspect ratio
-    if (sprite.scale.x == 1 && sprite.scale.y !== 1) {
-        sprite.scale.x = sprite.scale.y;
-    }
-    if (sprite.scale.y == 1 && sprite.scale.x !== 1) {
-        sprite.scale.y = sprite.scale.x;
-    }
-
-    if (actor.getWidth() == 0 && actor.getHeight() == 0) {
-        // If nothing set, instead set the actor to match the sprite
-        actor.setWidth(sprite.swidth);
-        actor.setHeight(sprite.sheight);
-    }
-}
-
-function setDimensions(actor:ex.Actor, x:number, y:number):void {
-    let scaleX, scaleY:number;
-    if (x > 0) {
-        scaleX = x / actor.getWidth();
-    }
-    if (y > 0) {
-        scaleY = y / actor.getHeight();
-    }
-
-    // If one scale is missing, lock aspect ratio
-    if (x == 0) {
-        scaleX = scaleY;
-    }
-    if (y == 0) {
-        scaleY = scaleX;
-    }
-
-    recursiveSetScale(actor, scaleX, scaleY);
-}
-
-function recursiveSetScale(actor:ex.Actor, scaleX:number, scaleY:number):void {
-    actor.scale.setTo(scaleX, scaleY);
-    for (let child of actor.children) {
-        recursiveSetScale(child, scaleX, scaleY);
-    };
-}
-
-function createBodyFromActor(actor:ex.Actor, mass:number = 1) {
-    return new p2.Body({
-        mass: mass, // Setting mass to 0 makes it static
-        position: [actor.x, actor.y],
-        angle: actor.rotation,
-        velocity: [actor.vel.x, actor.vel.y],
-        angularVelocity: actor.rx
-    });
-}
-
-enum SupportedShape { Box, Convex, Concave };
-
-function setPhysics(actor:ex.Actor, shape:SupportedShape, mass:number = 1):void {
-    let collisionShape:p2.Shape;
-    switch (shape)
-    {
-        case SupportedShape.Box:
-            collisionShape = new p2.Box({ width: actor.getWidth(), height: actor.getHeight() });
-            break;
-        default:
-            throw new Error('Unsupported physics shape');
-    }
-
-    let collisionBody = createBodyFromActor(actor, mass);
-    collisionBody.addShape(collisionShape);
-    world.addBody(collisionBody);
-    bodies_simulated.set(actor.id, collisionBody);
-
-    // When the actor is killed, remove this body from simulation
-    actor.on('kill', (evt:ex.KillEvent) => {
-        world.removeBody(bodies_simulated.get(actor.id));
-        bodies_simulated.delete(actor.id);
-        actor.visible = false;
-    })
-}

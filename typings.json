@@ -5,5 +5,8 @@
     "mocha": "registry:dt/mocha#2.2.5+20161028141524",
     "node": "registry:dt/node#6.0.0+20160613154055",
     "p2": "registry:dt/p2#0.7.1+20160423143225"
+  },
+  "dependencies": {
+    "glob": "registry:npm/glob#6.0.0+20160723033700"
   }
 }
