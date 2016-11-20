@@ -31,20 +31,26 @@ var world:p2.World = physics.world;
 // Start the engine to begin the game.
 game.start(loader).then(() => {
     // Crosshairs
-    var cursor:Entity = new EntityBuilder()
+    var cursor:Entity;
+    new EntityBuilder()
         .addSprite(graphics, "crosshairs.png")
         .setSize(64, 0)
-        .build();
-    game.add(cursor);
+        .build().then((entity:Entity) => {
+            cursor = entity;
+            game.add(cursor);
+        });
 
     // Gun
-    var gun:Entity = new EntityBuilder()
+    var gun:Entity;
+    new EntityBuilder()
         .addSprite(graphics, "stoner63.png")
         .setSize(180, 0)
         .setPosition(new Vector(game.getWidth() / 4, game.getHeight() / 2))
-        .setPhysics(physics, SupportedShape.Box, 0)
-        .build();
-    game.add(gun);
+        .setPhysics(physics, SupportedShape.Concave, 0)
+        .build().then((entity:Entity) => {
+            gun = entity;
+            game.add(gun);
+        });
 
     // Casing
     var casingActors:Actor[] = [];
@@ -58,12 +64,13 @@ game.start(loader).then(() => {
         gun.setAngle(diffVec.toAngle());
     });
 
-    game.input.pointers.primary.on("up", (evt:ex.Input.PointerEvent) => {
+    game.input.pointers.primary.on("down", (evt:ex.Input.PointerEvent) => {
         let ejectVector:Vector = Vector.Up
-            .scale(20)
+            .scale(40)
             .rotate(gun.phys.angle);
 
-        let casing = new EntityBuilder()
+        let casing:Entity;
+        new EntityBuilder()
             .addSprite(graphics, "casing.png")
             .setSize(10, 0)
             .setPosition(gun.pos.add(ejectVector))
@@ -71,12 +78,14 @@ game.start(loader).then(() => {
             .setVelocity(ejectVector)
             // TODO: Fix this causing odd behaviour due to one physics body spawning inside another
             .setPhysics(physics, SupportedShape.Box, 0.1)
-            .build();
-        game.add(casing);
+            .build().then((entity:Entity) => {
+                casing = entity;
+                game.add(casing);
 
-        casingActors.push(casing);
-        if (casingActors.length > 10) {
-            casingActors.shift().kill(); // dequeue and kill the oldest casing
-        }
+                casingActors.push(casing);
+                if (casingActors.length > 10) {
+                    casingActors.shift().kill(); // dequeue and kill the oldest casing
+                }
+            });
     });
 });

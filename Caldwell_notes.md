@@ -7,7 +7,7 @@
 - Physics engine integration with Excalibur
   - <del>Reposition ex.Actor objects on screen every update</del>
   - Remove objects from physics simulation on kill (onKill doesn't seem to work)
-  - System to automatically generate collision shapes from bitmaps
+  - <del>System to automatically generate collision shapes from bitmaps</del>
   
 - Point tracking on actors (e.g. ejection port, muzzle, attached flashlight)
   

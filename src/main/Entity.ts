@@ -2,9 +2,11 @@
 /// <reference path="../../node_modules/excalibur/dist/excalibur.d.ts" />
 
 import * as ex from "excalibur";
-import { Actor, Engine, IEngineOptions, Sprite, Texture, Vector } from "excalibur";
-import * as p2 from 'p2';
-import { Body, Shape, World } from 'p2';
+import { Actor, Engine, IEngineOptions, Polygon, Sprite, Texture, Vector } from "excalibur";
+import * as p2 from "p2";
+import { Body, Shape, World } from "p2";
+var getImageOutline = require("image-outline");
+var hull = require("hull.js");
 
 import { PhysicsWorld } from "./physics";
 import { Graphics } from "./graphics";
@@ -12,10 +14,17 @@ import { Graphics } from "./graphics";
 export enum SupportedShape { Box, Convex, Concave };
 
 export class Entity extends Actor {
+
     public phys:Body;
 
+    public textureRef:string;
+
     public hasPhysics():boolean {
-        return this.phys == null;
+        return this.phys != null;
+    }
+
+    public getTextureRef():string {
+        return this.textureRef;
     }
 
     public setPosition(pos:Vector):Entity {
@@ -39,13 +48,15 @@ export class Entity extends Actor {
 
 export class EntityBuilder {
 
-    protected result:Entity = (new Actor()) as Entity;
+    protected result:Entity = new Entity();
     protected desiredWidth:number = 0; // 0 means "auto"
     protected desiredHeight:number = 0;
 
     protected physWorld:PhysicsWorld = null;
     protected desiredShape:SupportedShape = null;
     protected desiredMass:number = 1;
+
+    protected graphics:Graphics = null;
 
     public setPosition(pos:Vector):EntityBuilder {
         this.result.pos.setTo(pos.x, pos.y);
@@ -67,6 +78,10 @@ export class EntityBuilder {
         return this;
     }
 
+    /**
+     * Sets the size of the entity, by scaling its X or Y. Leave 0 to auto preserve aspect ratio.
+     * WARNING: Do not set both at once. Excalibur will screw up the rotation of the actor.
+     */
     public setSize(width:number, height:number):EntityBuilder {
         this.desiredWidth = width;
         this.desiredHeight = height;
@@ -74,13 +89,16 @@ export class EntityBuilder {
     }
 
     public addSprite(graphics:Graphics, textureRef:string):EntityBuilder {
+        this.graphics = graphics;
         if (graphics.getTexture(textureRef) == null) {
             console.log(`Failed to find texture at path ${textureRef}.`)
             return this;
         }
 
         let sprite:Sprite = graphics.getTexture(textureRef).asSprite();
+
         this.result.addDrawing(sprite);
+        this.result.textureRef = textureRef;
         return this;
     }
 
@@ -99,7 +117,7 @@ export class EntityBuilder {
         return this;
     }
 
-    public build():Entity {
+    public build():Promise<Entity> {
         // cutting down on verbosity
         let result = this.result;
         let phys = this.result.phys;
@@ -108,9 +126,9 @@ export class EntityBuilder {
         this.buildSizeAndScale(result);
 
         // Build physics objects and add to the simulation
-        this.buildPhysics(result);
-
-        return result;
+        return this.buildPhysics(result).then(() => {
+            return result;
+        });
     }
 
     private buildSizeAndScale(result:Entity):void {
@@ -136,18 +154,10 @@ export class EntityBuilder {
         result.scale.setTo(scaleX, scaleY);
     }
 
-    private buildPhysics(result:Entity):void {
-        if (this.physWorld != null) {
-            let collisionShape:Shape;
-            switch (this.desiredShape)
-            {
-                case SupportedShape.Box:
-                    collisionShape = new p2.Box({ width: result.getWidth(), height: result.getHeight() });
-                    break;
-                default:
-                    throw new Error("Unsupported physics shape");
-            }
-
+    private async buildPhysics(result:Entity):Promise<void> {
+        if (this.physWorld == null) {
+            return Promise.resolve();
+        } else {
             let collisionBody = new Body({
                 mass: this.desiredMass, // Setting mass to 0 makes it static		
                 position: [ result.getWorldPos().x, result.getWorldPos().y ],		
@@ -155,16 +165,72 @@ export class EntityBuilder {
                 velocity: [result.vel.x, result.vel.y],		
                 angularVelocity: result.rx
             });
-            collisionBody.addShape(collisionShape);
 
-            this.physWorld.world.addBody(collisionBody);
-            this.physWorld.bodiesByActorId.set(result.id, collisionBody);
-            result.phys = collisionBody;
+            return this.addCollisionShape(collisionBody, this.desiredShape).then(() => {
+                this.physWorld.world.addBody(collisionBody);
+                this.physWorld.bodiesByActorId.set(result.id, collisionBody);
+                result.phys = collisionBody;
 
-            // set deltas back to 0, since all movement comes only from sync with p2
-            result.vel = Vector.Zero;
-            result.rx = 0;
+                // set deltas back to 0, since all movement comes only from sync with p2
+                result.vel = Vector.Zero;
+                result.rx = 0;
+            })
         }
     }
 
+    private addCollisionShape(collisionBody:Body, shape:SupportedShape):Promise<void> {
+        let result = this.result;
+        switch (shape)
+        {
+            case SupportedShape.Box:
+                let collisionShape:Shape;
+                collisionShape = new p2.Box({ width: result.getWidth(), height: result.getHeight() });
+                collisionBody.addShape(collisionShape);
+                return Promise.resolve();
+            case SupportedShape.Concave:
+                return this.createCollisionFromBitmap(collisionBody, this.graphics.getTexture(result.textureRef).path);
+            default:
+                return Promise.reject(new Error("Unsupported physics shape"));
+        }
+    }
+
+    private createCollisionFromBitmap(collisionBody:Body, pathToImage:string):Promise<void> {
+        return new Promise((resolve,reject) => {
+            getImageOutline(pathToImage, (err:any, outline:{x:number, y:number}[]) => {
+                if (err) {
+                    reject(err);
+                }
+                
+                // [{x: 5, y: 7}] => [[5, 7]]
+                let points:number[][] = outline.map((element:{x:number, y:number}) => {
+                    return [ element.x, element.y ];
+                });
+
+                // apply scale
+                points = points.map((element:number[]) => {
+                    return [element[0] * this.result.scale.x, element[1] * this.result.scale.y];
+                });
+
+                // The generated points from hull() don't seem to work with p2.Body.fromPolygon()
+                //let collisionPolygon:number[][] = hull(points, 90); // returns points of the hull (in clockwise order)
+
+                // Give a concave path to the body.
+                let fromPolyResult = collisionBody.fromPolygon(points, true);
+                console.log("Attempt to add custom collision shape: " + fromPolyResult);
+
+                // debug: create a drawable polygon to render the collision shape
+                // [[5, 7]] => [{x: 5, y: 7}:Vector]
+                // let collisionPolygonVecs:Vector[] = points.map((element:number[]) => {
+                //     return new Vector(element[0], element[1]);
+                // });
+                // let polygon:Polygon = new Polygon(collisionPolygonVecs);
+                // polygon.filled = false;
+                // polygon.lineColor = ex.Color.Red;
+                // this.result.addDrawing("debugPolygon", polygon);
+                // this.result.setDrawing("debugPolygon");
+
+                resolve();
+            });
+        });
+    }
 }

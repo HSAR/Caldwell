@@ -11,6 +11,8 @@
     "electron": "^1.4.1",
     "excalibur": "0.7.1",
     "glob": "^7.1.1",
+    "hull.js": "^0.2.10",
+    "image-outline": "^0.1.0",
     "p2": "^0.7.1",
     "socket.io": "^1.5.1"
   },
