@@ -15,7 +15,25 @@ export class Entity extends Actor {
     public phys:Body;
 
     public hasPhysics():boolean {
-        return this.body == null;
+        return this.phys == null;
+    }
+
+    public setPosition(pos:Vector):Entity {
+        this.pos.setTo(pos.x, pos.y);
+        
+        if (this.hasPhysics()) {
+            this.phys.position = [ pos.x, pos.y ];
+        }
+        return this;
+    }
+
+    public setAngle(angle:number):Entity {
+        this.rotation = angle;
+        
+        if (this.hasPhysics()) {
+            this.phys.angle = angle;
+        }
+        return this;
     }
 }
 

@@ -12,7 +12,7 @@ import { Body, Shape } from "p2";
 
 export class Graphics {
 
-    public texturesByPath:Map<string, Texture> = new Map<string, Texture>();
+    private texturesByPath:Map<string, Texture> = new Map<string, Texture>();
 
     constructor(materialsFolderPath:string) {
         // Create textures from all .PNG files in the given folder
@@ -27,8 +27,12 @@ export class Graphics {
         console.log(`Found ${this.texturesByPath.size} textures to load.`)
     }
 
-    public getTexture(textureRef:string) {
+    public getTexture(textureRef:string):Texture {
         return this.texturesByPath.get(textureRef);
+    }
+
+    public getAllTextures():Texture[] {
+        return Array.from(this.texturesByPath.values());
     }
 
 }

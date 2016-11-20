@@ -22,7 +22,7 @@ var game:Engine = new Engine({
 
 // Load textures
 let graphics = new Graphics(path.join(__dirname, "assets", "materials"));
-var loader = new ex.Loader(Array.from(graphics.texturesByPath.values()));
+var loader = new ex.Loader(graphics.getAllTextures());
 
 // Setup physics world
 var physics = new PhysicsWorld(game);
@@ -55,7 +55,7 @@ game.start(loader).then(() => {
 
         // Gun points at cursor
         var diffVec:Vector = new Vector(evt.x - gun.phys.position[0], evt.y - gun.phys.position[1]);
-        gun.phys.angle = diffVec.toAngle();
+        gun.setAngle(diffVec.toAngle());
     });
 
     game.input.pointers.primary.on("up", (evt:ex.Input.PointerEvent) => {
