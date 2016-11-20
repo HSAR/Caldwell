@@ -25,6 +25,10 @@ export class EntityBuilder {
     protected desiredWidth:number = 0; // 0 means "auto"
     protected desiredHeight:number = 0;
 
+    protected physWorld:PhysicsWorld = null;
+    protected desiredShape:SupportedShape = null;
+    protected desiredMass:number = 1;
+
     public setPosition(pos:Vector):EntityBuilder {
         this.result.pos.setTo(pos.x, pos.y);
         return this;
@@ -62,22 +66,10 @@ export class EntityBuilder {
         return this;
     }
 
-    public setPhysics(physWorld:PhysicsWorld, shape:SupportedShape, bodyMass:number = 1):EntityBuilder {
-        let collisionShape:Shape;
-        switch (shape)
-        {
-            case SupportedShape.Box:
-                collisionShape = new p2.Box({ width: this.result.getWidth(), height: this.result.getHeight() });
-                break;
-            default:
-                throw new Error("Unsupported physics shape");
-        }
-
-        let collisionBody = new Body({
-            mass: bodyMass, // Setting mass to 0 makes it static
-        });
-        collisionBody.addShape(collisionShape);
-        physWorld.world.addBody(collisionBody);
+    public setPhysics(physWorld:PhysicsWorld, shape:SupportedShape, mass:number = 1):EntityBuilder {
+        this.physWorld = physWorld;
+        this.desiredShape = shape;
+        this.desiredMass = mass;
 
         // When the actor is killed, remove this body from simulation
         this.result.on("kill", (evt:ex.KillEvent) => {
@@ -86,8 +78,6 @@ export class EntityBuilder {
             this.result.visible = false;
         })
 
-        physWorld.bodiesByActorId.set(this.result.id, collisionBody);
-        this.result.phys = collisionBody;
         return this;
     }
 
@@ -97,6 +87,15 @@ export class EntityBuilder {
         let phys = this.result.phys;
 
         // Set the size of the actor (magnitude and scale)
+        this.buildSizeAndScale(result);
+
+        // Build physics objects and add to the simulation
+        this.buildPhysics(result);
+
+        return result;
+    }
+
+    private buildSizeAndScale(result:Entity):void {
         if (result.currentDrawing != null) {
             result.setWidth(result.currentDrawing.width);
             result.setHeight(result.currentDrawing.height);
@@ -104,10 +103,10 @@ export class EntityBuilder {
         let scaleX:number = 1;
         let scaleY:number = 1;
         if (this.desiredWidth > 0) {
-            scaleX = this.desiredWidth / this.result.getWidth();
+            scaleX = this.desiredWidth / result.getWidth();
         }
         if (this.desiredHeight > 0) {
-            scaleY = this.desiredHeight / this.result.getHeight();
+            scaleY = this.desiredHeight / result.getHeight();
         }
         // if one scale is missing, lock aspect ratio
         if (this.desiredWidth == 0) {
@@ -116,21 +115,38 @@ export class EntityBuilder {
         if (this.desiredHeight == 0) {
             scaleY = scaleX;
         }
-        this.result.scale.setTo(scaleX, scaleY);
+        result.scale.setTo(scaleX, scaleY);
+    }
 
-        // Pass the ex physics attributes to the p2 simulation
-        if (result.phys != null) {
-            phys.position = [ result.getWorldPos().x, result.getWorldPos().y ];
-            phys.angle = result.rotation;
-            phys.velocity = [ result.vel.x, result.vel.y ];
-            phys.angularVelocity = result.rx;
+    private buildPhysics(result:Entity):void {
+        if (this.physWorld != null) {
+            let collisionShape:Shape;
+            switch (this.desiredShape)
+            {
+                case SupportedShape.Box:
+                    collisionShape = new p2.Box({ width: result.getWidth(), height: result.getHeight() });
+                    break;
+                default:
+                    throw new Error("Unsupported physics shape");
+            }
+
+            let collisionBody = new Body({
+                mass: this.desiredMass, // Setting mass to 0 makes it static		
+                position: [ result.getWorldPos().x, result.getWorldPos().y ],		
+                angle: result.rotation,		
+                velocity: [result.vel.x, result.vel.y],		
+                angularVelocity: result.rx
+            });
+            collisionBody.addShape(collisionShape);
+
+            this.physWorld.world.addBody(collisionBody);
+            this.physWorld.bodiesByActorId.set(result.id, collisionBody);
+            result.phys = collisionBody;
 
             // set deltas back to 0, since all movement comes only from sync with p2
             result.vel = Vector.Zero;
             result.rx = 0;
         }
-
-        return result;
     }
 
 }
