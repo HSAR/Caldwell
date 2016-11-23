@@ -9,7 +9,7 @@ Project Caldwell
 Typings, Gulp, Electron
 
 ```sh
-npm install -g gulp
+npm install -g github:gulpjs/gulp#4.0
 npm install -g typings
 npm install -g electron
 npm link electron
