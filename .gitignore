@@ -39,3 +39,6 @@ typings
 
 # Build directory
 build
+
+# IntelliJ
+.idea
