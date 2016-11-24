@@ -1,22 +1,8 @@
 /// <reference path="../../typings/index.d.ts" />
 
 import { app, BrowserWindow } from "electron";
-import * as fetch from 'node-fetch';
-const electronOauth2 = require("electron-oauth2");
 
-import { Config } from "./config";
-
-var config = {
-    clientId: Config.clientID,
-    clientSecret: Config.clientSecret,
-    //authorizationUrl: Config.commonAuthEndpoint,
-    authorizationUrl: "https://login.microsoftonline.com/aaddevtest.onmicrosoft.com/oauth2/authorize",
-    tokenUrl: Config.tokenURL,
-    useBasicAuthorizationHeader: false,
-    //redirectUri: "urn:ietf:wg:oauth:2.0:oob"
-    //redirectUri: Config.returnURL
-    redirectUri: 'http://localhost'
-};
+import { Authentication, IdentityProvider } from "./Authentication";
 
 console.log("Caldwell launch started.");
 
@@ -47,56 +33,12 @@ app.on('ready', function() {
         }
     };
 
-    const options = {
-        scope: 'user_impersonation',
-        accessType: 'online'
-    };
-
-    const aadOauth = electronOauth2(config, windowParams);
-
-    aadOauth.getAccessToken(options)
-        .then((token:any) => {
-            console.log("Token fetch complete.");
-            //console.log(JSON.stringify(token));
-
-            // use your token.access_token
-            if (token.expires_on > (Date.now() * 1000)) {// token.expires_on is in seconds from aadOauth
-                aadOauth.refreshToken(token.refresh_token)
-                    .then((newToken:any) => {
-                        token = newToken;
-                    });
-            }
-
-            // Fetch the user's information
-
-            var bearerToken:string = "Bearer " + token.access_token;
-            const header = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': bearerToken
-            };
-
-            return fetch("https://graph.windows.net/me?api-version=1.6", {
-                method: 'GET',
-                headers: header,
-                body: ''
-            })
-            /*.then(res => {
-                return res.text();
-            }).then(function(body) {
-                console.log(body);
-                return body;
-            });*/
-            .then(res => {
-                return res.json();
-            });
-        })
+    Authentication.requestUserAuthenticate(IdentityProvider.Steam, windowParams)
         .then((userProfile:any) => {
             console.log("User profile fetch complete.");
             // set user profile as a global object
             console.log(JSON.stringify(userProfile));
             global['profile'] = userProfile;
-
 
             // Create the browser window.
             mainWindow = new BrowserWindow({width: 800, height: 600});
