@@ -42,8 +42,9 @@ export class Authentication {
                         // Fetch the user's information
                         return Authentication.bearerAuthenticatedGet(token.access_token, "https://graph.windows.net/me?api-version=1.6")
                             .then((queryJson:any) => {
+                                // #TODO: Fetch & prioritise their Xbox Live ID?
                                 return new AuthenticatedUser(queryJson.displayName, 
-                                    new Map<IdentityProvider, string>().set(IdentityProvider.AzureActiveDirectory, queryJson.oid));
+                                    new Map<IdentityProvider, string>().set(IdentityProvider.AzureActiveDirectory, _.get(queryJson, "_json.oid", "")));
                             });
                     });
             case IdentityProvider.Google:
@@ -60,7 +61,7 @@ export class Authentication {
                                   Authentication.getPrimaryValue(_.get(queryJson, "names", []) as Object[], "displayName")
                                 //console.log("displayName: " + displayName);
                                 return new AuthenticatedUser(displayName, 
-                                    new Map<IdentityProvider, string>().set(IdentityProvider.Google, queryJson.resourceName));
+                                    new Map<IdentityProvider, string>().set(IdentityProvider.Google, _.get(queryJson, "resourcename", "")));
                             });
                     });
             case IdentityProvider.Steam:
@@ -87,9 +88,10 @@ export class Authentication {
                         });
                     })
                     .then((queryJson:any) => {
-                        let result = queryJson['response']['players'][0];
-                        result.displayName = result['personaname'];
-                        return result;
+                        var profile:Object = _.get(queryJson, "response.players[0]", {});
+                        var displayName:string = _.get(profile, "personaname", "") // #TODO: Figure out if this is ever null/undefined
+                        return new AuthenticatedUser(displayName, 
+                            new Map<IdentityProvider, string>().set(IdentityProvider.Steam, _.get(profile, "steamid", "")));
                     });
             default:
                 return Promise.reject(new Error("Unsupported identity provider"));
