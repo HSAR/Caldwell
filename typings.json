@@ -9,5 +9,8 @@
   "dependencies": {
     "glob": "registry:npm/glob#6.0.0+20160723033700",
     "node-fetch": "registry:dt/node-fetch#0.0.0+20160711094047"
+  },
+  "dependencies": {
+    "lodash": "registry:npm/lodash#4.0.0+20161015015725"
   }
 }

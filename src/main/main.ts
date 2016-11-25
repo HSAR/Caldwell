@@ -33,10 +33,10 @@ app.on('ready', function() {
         }
     };
 
-    Authentication.requestUserAuthenticate(IdentityProvider.Steam, windowParams)
+    Authentication.requestUserAuthenticate(IdentityProvider.Google, windowParams)
         .then((userProfile:any) => {
-            console.log("User profile fetch complete.");
             // set user profile as a global object
+            console.log("User profile fetch complete.")
             console.log(JSON.stringify(userProfile));
             global['profile'] = userProfile;
 
