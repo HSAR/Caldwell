@@ -1,15 +1,26 @@
 ## Development Notes (TODOs)
 
 - debug support
-  - How do we attach the vscode debugger to electron?
-  - Pass through console log messages
+  - <del>How do we attach the vscode debugger to electron?</del>
+    - Fix source map support
+  - <del>Pass through console log messages</del>
 
 - Physics engine integration with Excalibur
   - <del>Reposition ex.Actor objects on screen every update</del>
-  - Remove objects from physics simulation on kill (onKill doesn't seem to work)
-  - <del>System to automatically generate collision shapes from bitmaps</del>
+  - <del>Remove objects from physics simulation on kill (onKill doesn't seem to work)</del>
+  - <del>System to automatically generate collision shapes from bitmaps</del>  
+  - Point tracking on actors (e.g. ejection port, muzzle, attached flashlight)
+  - Child actors (actors attached to other actors)
   
-- Point tracking on actors (e.g. ejection port, muzzle, attached flashlight)
+- Networking
+  - Server implementation - matchmaking?
+  - Peer-to-peer architecture?
+    - Game state synchronisation
+    
+- Server
+  - User profiles from SSO services
+  - Persistent storage
+  - Front-end UX and features?
   
 ## NB
 
