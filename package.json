@@ -6,10 +6,13 @@
     "type": "git",
     "url": "https://github.com/HSAR/Caldwell.git"
   },
+  "bugs": {
+    "url": "https://github.com/HSAR/Caldwell/issues"
+  },
   "version": "0.0.1",
   "dependencies": {
     "electron": "^1.4.1",
-    "electron-oauth2": "^2.3.1",
+    "electron-oauth2": "^2.4.0",
     "excalibur": "0.7.1",
     "glob": "^7.1.1",
     "hull.js": "^0.2.10",
