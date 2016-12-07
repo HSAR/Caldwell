@@ -1,6 +1,8 @@
 # Caldwell
 Project Caldwell
 
+[Client](https://github.com/HSAR/Caldwell) / [Server](https://github.com/HSAR/Caldwell-Server)
+
 ## Development
 
 [Node.js](https://nodejs.org/) 4.x+ and npm  are required. [Visual Studio Code](https://code.visualstudio.com/) is recommended.
