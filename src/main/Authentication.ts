@@ -5,6 +5,8 @@ import * as querystring from "querystring";
 import * as fetch from 'node-fetch';
 import * as _ from "lodash";
 
+var namor = require('namor');
+
 import * as oauth2_auth from "./OAuth2";
 import * as openid_auth from "./OpenID";
 
@@ -13,11 +15,20 @@ export enum IdentityProvider {
 };
 
 export class AuthenticatedUser {
-    constructor(
-        // TODO for all identity providers, get the nickname of the user
-        public displayName:string, // This is a displayed username, and does not uniquely identify the user.
-        public uniqueIdsByProvider:Map<IdentityProvider, string> // These are the id providers connected by the user, and the unique IDs within. These identify the user.
-        ) {
+
+    public displayName; // This is a displayed username, and does not uniquely identify the user.
+    public uniqueIdsByProvider:Map<IdentityProvider, string>; // These are the id providers connected by the user, and the unique IDs within. These identify the user.
+
+    constructor(displayName:string, uniqueIdsByProvider:Map<IdentityProvider, string>) {
+        this.displayName = displayName;
+        this.uniqueIdsByProvider = uniqueIdsByProvider;
+        
+        if (this.displayName == null) {
+            this.displayName = namor.generate();
+        }
+        if (uniqueIdsByProvider == null || uniqueIdsByProvider.size < 1) {
+            throw new Error('AuthenticatedUser must be created with at least one unique ID.');
+        }
     }
 }
 

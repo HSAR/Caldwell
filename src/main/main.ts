@@ -2,7 +2,7 @@
 
 import { app, BrowserWindow } from "electron";
 
-import { Authentication, IdentityProvider } from "./Authentication";
+import { Authentication, IdentityProvider, AuthenticatedUser } from "./Authentication";
 
 console.log("Caldwell launch started.");
 
@@ -34,7 +34,7 @@ app.on('ready', function() {
     };
 
     Authentication.requestUserAuthenticate(IdentityProvider.Google, windowParams)
-        .then((userProfile:any) => {
+        .then((userProfile:AuthenticatedUser) => {
             // set user profile as a global object
             console.log("User profile fetch complete.")
             console.log(JSON.stringify(userProfile));
