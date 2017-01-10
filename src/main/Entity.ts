@@ -44,6 +44,16 @@ export class Entity extends Actor {
         }
         return this;
     }
+
+    public applyForce(force:number[], relativePoint?:number[]):Entity {
+        this.phys.applyForce(force, relativePoint);
+        return this;
+    }
+
+    public applyImpulse(impulse:number[], relativePoint?:number[]):Entity {
+        this.phys.applyImpulse(impulse, relativePoint);
+        return this;
+    }
 }
 
 export class EntityBuilder {
