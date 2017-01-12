@@ -21,6 +21,11 @@
   - User profiles from SSO services
   - Persistent storage
   - Front-end UX and features?
+
+- Game object modelling
+  - Loading and retrieving static data (textures, properties)
+    - Global static object?
+    - (Future) Investigate objects with dynamic properties: for example, a weapon with high heat capacity, but that becomes less accurate when hot.
   
 ## NB
 
@@ -45,5 +50,8 @@
     - Weapon (+ firepower - lightness)
       - Energy weapons? (+ firepower - energy)
     - Ammunition (+ ammo - lightness)
-    - Ammo feed (+ firerate max rate - lightness)
+    - Ammo feed (+ max firerate - lightness)
+      - Magazines (+ rounds fired at max firerate - reload time - lightness (loader + magazine weight))
+      - Pools (+ rounds fired at max firerate - lightness)
+      - Belt (rounds fired at rate of loader)
     - Cooling (+ firerate sustained - lightness)
