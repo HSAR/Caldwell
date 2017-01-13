@@ -2,7 +2,7 @@
 
 import { Identifiable } from "./General";
 import { Entity } from "../Entity";
-import { EquipmentBase, Equippable, EquippableData } from "./Equippable";
+import { ItemBase, HasMass, ResourceData } from "./Equippable";
 
 export class AmmoData extends Identifiable {
 
@@ -25,7 +25,7 @@ export class AmmoSupplyData extends Identifiable {
         public id:string, // must be globally unique
         public name:string,
 
-        public basicData:EquippableData,
+        public basicData:ResourceData,
 
         public ammoType:string,
         public reloadType:ReloadType,
@@ -42,7 +42,7 @@ export enum ReloadType {
     Belt, // Weapon is limited by loader supply rate. N rounds are held "in the belt".
 }
 
-export class AmmoSupply extends EquipmentBase {
+export class AmmoSupply extends ItemBase {
     
     protected ammoSupplyData:AmmoSupplyData;
     protected entity:Entity;

@@ -33,6 +33,28 @@
 - p2 co-ordinate system is upside-down relative to Excalibur's
   - Example: To place a floor, we create a plane at 0,[game height] and rotate it 180 degrees
 
+- Game model
+  - Ships are composed out of items that fit into slots (i.e. `engine_ion_40kW` equips into `slot_engine_rear`).
+    - Ship hulls provide slots. Some provide more, some provide less.
+    - Items can provide slots, but don't have to. 
+      - For example, `optic_laserTargeter` equips into `slot_optic_targeter` provided by `weapon_launcher_missile__mk57_8cell`. `optic_laserTargeter` doesn't provide any slots, so nothing is equipped on it.
+  - Items must consume at least one slot, but may consume any number of slots.
+  - Items have key attributes. 
+    - Mass affects ship handling and weapon aiming speed.
+      - Higher-powered and heavier engines have higher thrust.
+      - Higher-powered and heavier thruster systems (optional) allow the ship to turn faster.
+      - Higher-powered and heavier weapon mounts shift guns faster and to wider arcs of fire.
+    - Power draw shuts down the ship if energy supply does not match demand. Total shutdown, not partial shutdown (prevents E:D-like necessity for configuration of energy priority).
+      - Heavier reactors provide more energy.
+      - Adding capacitor batteries provide short-term refilling pools of energy. Possible to factor in inefficiency?
+  - Slots only support a limited mass and power draw?
+
+  - Reactor weight example
+    - MT30 gas turbine
+      - Mass: 77000 kg
+      - Energy: 36000000 W
+
+
 ## Gameplay Design Notes
 
 - Side-scrolling vehicle swinging through cavern 
@@ -46,7 +68,7 @@
     - Armour plating (+ protection - lightness)
     - Hook firing system (+ faster projectile - lightness - energy)
     - Reactor (+ energy - lightness)
-    - Turret (+ weapon mounts - lightness)
+    - Turret (+ weapon mounts - lightness) (mounts are roughly 25-50% the mass of the weapon they mount)
         - Shock absorbing mounts (+ recoil reduction - lightness)
   - P2 customises the weaponry
     - Weapon (+ firepower - lightness)

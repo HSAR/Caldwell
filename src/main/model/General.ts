@@ -1,9 +1,6 @@
 /// <reference path="../../../typings/index.d.ts" />
 
-export class Identifiable {
-    constructor(
-        public id:string, // must be globally unique
-        public name:string,
-    ) {
-    }
+export interface Identifiable {
+    getId():string; // must be globally unique
+    getName():string;
 }
