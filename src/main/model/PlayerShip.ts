@@ -1,3 +1,9 @@
 /// <reference path="../../../typings/index.d.ts" />
 
-export class PlayerShip
+import { EquipmentBase, Equippable } from "./Equippable";
+
+export class PlayerShip implements HasSlots {
+
+
+
+}

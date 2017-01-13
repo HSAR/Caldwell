@@ -25,6 +25,7 @@
 - Game object modelling
   - Loading and retrieving static data (textures, properties)
     - Global static object?
+      - Retrieve data objects by ID and expected type?
     - (Future) Investigate objects with dynamic properties: for example, a weapon with high heat capacity, but that becomes less accurate when hot.
   
 ## NB
@@ -46,6 +47,7 @@
     - Hook firing system (+ faster projectile - lightness - energy)
     - Reactor (+ energy - lightness)
     - Turret (+ weapon mounts - lightness)
+        - Shock absorbing mounts (+ recoil reduction - lightness)
   - P2 customises the weaponry
     - Weapon (+ firepower - lightness)
       - Energy weapons? (+ firepower - energy)

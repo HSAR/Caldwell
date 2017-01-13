@@ -2,6 +2,8 @@
 
 import { Bag } from 'typescript-collections';
 
+import { Identifiable } from "./General";
+
 export interface HasSlots {
     getSlotsProvided():Bag<string>;
     getEquipped():Bag<(Equippable & UsesSlots)>;
@@ -12,12 +14,7 @@ export interface UsesSlots {
     getSlotsUsed():Bag<string>;
 }
 
-export interface HasMass {
-    getTotalMass():number;
-}
-
 export interface Equippable {
-
     getId():string;
     getName():string;
 
@@ -26,32 +23,45 @@ export interface Equippable {
 
     getEnergyDraw():number;
     getEnergyDrawTotal():number;
+}
 
+export class EquippableData extends Identifiable {
+    constructor(
+        id:string, // must be globally unique
+        name:string,
+
+        public mass:number, // kg
+        public energyDraw:number, // watts
+
+        public slotsUsed:string[], // list of slots this equipment uses up
+        public slotsProvided:string[], // list of slots that other equipment can go into
+
+        public ammoType:string,
+        ) {
+            super(id, name);
+        }
 }
 
 export abstract class EquipmentBase implements Equippable, UsesSlots, HasSlots {
 
-    id:string; // must be globally unique
-    name:string;
-
+    public data:EquippableData;
     equippedTo:Equippable; // "weapon_cannon105 is equipped to weaponMount_twinCannons"
-    slotsUsed:string[]; // list of slots this equipment uses up
-    slotsProvided:string[]; // list of slots that other equipment can go into
     equipped:Equippable[]; // "weaponMount_twinCannons has [weapon_cannon105, weapon_cannon25] equipped"
 
-    mass:number; // kg
-    energyDraw:number; // j
+    constructor(equippableData:EquippableData) {
+        this.data = equippableData;
+    }
 
     getId():string {
-        return this.id;
+        return this.data.id;
     }
 
     getName():string {
-        return this.name;
+        return this.data.name;
     }
 
     getMass():number {
-        return this.mass;
+        return this.data.mass;
     }
 
     getMassTotal():number {
@@ -63,7 +73,7 @@ export abstract class EquipmentBase implements Equippable, UsesSlots, HasSlots {
     }
 
     getEnergyDraw():number {
-        return this.energyDraw;
+        return this.data.energyDraw;
     }
 
     getEnergyDrawTotal():number {
@@ -76,7 +86,7 @@ export abstract class EquipmentBase implements Equippable, UsesSlots, HasSlots {
 
     getSlotsUsed():Bag<string> {
         let result = new Bag<string>();
-        for (let slot of this.slotsUsed) {
+        for (let slot of this.data.slotsUsed) {
             result.add(slot, 1);
         }
         return result;
@@ -84,7 +94,7 @@ export abstract class EquipmentBase implements Equippable, UsesSlots, HasSlots {
 
     getSlotsProvided():Bag<string> {
         let result = new Bag<string>();
-        for (let slot of this.slotsProvided) {
+        for (let slot of this.data.slotsProvided) {
             result.add(slot, 1);
         }
         return result;
@@ -95,7 +105,7 @@ export abstract class EquipmentBase implements Equippable, UsesSlots, HasSlots {
         for (let equippedItem of this.equipped) {
             equipped.add(equippedItem, 1);
         }
-        return this.equipped;
+        return equipped;
     }
 
     getSlotsOpen():Bag<string> {
@@ -116,8 +126,4 @@ export abstract class EquipmentBase implements Equippable, UsesSlots, HasSlots {
 
         return slotsRemaining;
     }
-
-
-
-
 }

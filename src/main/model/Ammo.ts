@@ -1,12 +1,39 @@
 /// <reference path="../../../typings/index.d.ts" />
 
-export class AmmoType {
+import { Identifiable } from "./General";
+import { Entity } from "../Entity";
+import { EquipmentBase, Equippable, EquippableData } from "./Equippable";
 
-    id:string;
-    name:string;
-    mass:number;
-    firingHeat:number;
+export class AmmoData extends Identifiable {
 
+    constructor(
+        public id:string, // must be globally unique
+        public name:string,
+
+        public ammoType:string,
+        public mass:number, // kg
+        public firingHeat:number
+        ) {
+            super(id, name);
+        }
+
+}
+
+export class AmmoSupplyData extends Identifiable {
+
+    constructor(
+        public id:string, // must be globally unique
+        public name:string,
+
+        public basicData:EquippableData,
+
+        public ammoType:string,
+        public reloadType:ReloadType,
+        public reloadRate:number // number of rounds/magazines reloaded per second
+        ) {
+            super(id, name);
+        }
+    
 }
 
 export enum ReloadType {
@@ -15,12 +42,15 @@ export enum ReloadType {
     Belt, // Weapon is limited by loader supply rate. N rounds are held "in the belt".
 }
 
-export class AmmoSupply {
+export class AmmoSupply extends EquipmentBase {
+    
+    protected ammoSupplyData:AmmoSupplyData;
+    protected entity:Entity;
 
-    id:string;
-    name:string;
-    mass:number;
-    reloadType:ReloadType;
-    reloadRate:number // number of rounds/magazines reloaded per second
+    constructor(ammoSupplyData:AmmoSupplyData, entity:Entity) {
+        super(ammoSupplyData.basicData);
+        this.ammoSupplyData = ammoSupplyData;
+        this.entity = entity;
+    }
 
 }
