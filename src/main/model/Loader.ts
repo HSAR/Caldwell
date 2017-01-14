@@ -63,7 +63,7 @@ export class AmmoProvider implements IHaveAmmo {
         roundsToLoad:[[string, number]] // Multiple types can be supported. [["ammo_012x099mm", 100], ["ammo_030x173mm_shell", 10]] 
     ) {
         for (let ammoType of roundsToLoad) {
-            this.roundsLoaded.add()
+            this.roundsLoaded.add(ammoType[0], ammoType[1]);
         }
     }
 
@@ -163,7 +163,7 @@ export class AmmoBox extends ComponentBase implements IHaveAmmo {
         for (let ammoType of this.internalAmmoProvider.getAllAvailableRounds().toArray()) {
             ammoMass += ammoType.mass;
         }
-        return this.data.getMass() + 
+        return this.data.getMass() + ammoMass;
     }
 
     public getAllAvailableRounds():Bag<AmmoType> {
@@ -281,7 +281,7 @@ export class Loader extends ActivateableComponent implements IHaveAmmo, IUseAmmo
     }
 
     public activate():void {
-        this.loadRounds(this.)
+        this.loadRounds(this.maxLoadedRounds - this.internalAmmoProvider.getAvailableRounds(this.getAmmoType()));
     }
 
     static fromJSON(serialized:LoaderSerialization): Loader {

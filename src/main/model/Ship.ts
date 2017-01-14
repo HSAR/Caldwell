@@ -1,16 +1,17 @@
 /// <reference path="../../../typings/index.d.ts" />
 
 import { Bag } from 'typescript-collections';
+import * as ex from "excalibur";
 
-
+import { Entity } from "../Entity";
 import { IIdentifiable } from "./General";
-import { ComponentBase, IResourceable, ResourceData, SlotConsumer, SlotProvider } from "./Equippable";
+import { ActivateableComponent, ActivateableResourceData, SlotConsumer, SlotProvider } from "./Equippable";
 import { IHasSlots, IUseSlots } from "./Equippable";
 
 /**
  * Ships consume no slots.
  */
-export class Ship extends ComponentBase {
+export class Ship extends ActivateableComponent {
 
     constructor(
         id:string, // must be globally unique
@@ -25,9 +26,31 @@ export class Ship extends ComponentBase {
                 name,
                 new SlotConsumer([]),
                 new SlotProvider(slotsProvided), 
-                new ResourceData(mass, passivePowerDraw)
+                new ActivateableResourceData(mass, passivePowerDraw, 0)
             );
         }
+
+    public activate() {
+        return true;
+    }
+
+    public getTickRate() {
+        return 0;
+    }
+}
+
+/**
+ * An instance of a ship in-game. Has physics interactions and can be drawn on screen.
+ */
+export class ShipEntity {
+    
+    constructor(
+        protected ship:Ship,
+        protected entity:Entity) {
+            entity.on("preupdate", (evt:ex.PreUpdateEvent) => {
+                ship.tick(evt.delta);
+            })
+    }
 
 }
 

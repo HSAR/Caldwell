@@ -369,6 +369,14 @@ export abstract class ActivateableComponent extends ComponentBase implements Act
     public abstract activate();
 
     public tick(timeSinceLastTick:number):void {
+        // Tick all children
+        for (let equipped of this.getEquipped().toArray()) {
+            // #TODO: Find a better way to do this: "if equipped is IActivateable then equipped.activate()"
+            if (equipped["tick"]) {
+                equipped["tick"]();
+            }
+        }
+
         // If tickRate is 0 activate immediately.
         let tickRate = this.getTickRate();
         if (tickRate == 0) {
