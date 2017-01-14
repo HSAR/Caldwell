@@ -3,20 +3,20 @@
 import { Bag } from 'typescript-collections';
 
 
-import { Identifiable } from "./General";
-import { ItemBase, Resourceable, ResourceData, SlotConsumer, SlotProvider } from "./Equippable";
-import { HasSlots, UsesSlots } from "./Equippable";
+import { IIdentifiable } from "./General";
+import { ComponentBase, IResourceable, ResourceData, SlotConsumer, SlotProvider } from "./Equippable";
+import { IHasSlots, IUseSlots } from "./Equippable";
 
 /**
- * A special case of item that consumes no slots.
+ * Ships consume no slots.
  */
-export class Ship extends ItemBase {
+export class Ship extends ComponentBase {
 
     constructor(
         id:string, // must be globally unique
         name:string,
         mass:number, // kg
-        energyDraw:number, // watts
+        passivePowerDraw:number, // watts
 
         private slotsProvided:string[] // list of slots that other equipment can go into
         ) {
@@ -25,7 +25,7 @@ export class Ship extends ItemBase {
                 name,
                 new SlotConsumer([]),
                 new SlotProvider(slotsProvided), 
-                new ResourceData(mass, energyDraw)
+                new ResourceData(mass, passivePowerDraw)
             );
         }
 

@@ -2,43 +2,90 @@
 
 import { Bag } from 'typescript-collections';
 
-import { Identifiable } from "./General";
+import { IIdentifiable } from "./General";
 import * as utils from "../util/CollectionUtils";
 
-export interface HasSlots {
+export interface IHasSlots {
     getSlotsProvided():Bag<string>;
-    getEquipped():Bag<Resourceable>;
+    getEquipped():Bag<(IUseSlots & IResourceable)>;
     getSlotsOpen():Bag<string>;
 
-    canEquipItem(itemToEquip:Resourceable):boolean;
-    equipItem(itemToEquip:Resourceable, forceEquip:boolean):boolean;
-    unequipItem(itemToUnequip:Resourceable):boolean;
+    canEquipItem(itemToEquip:(IUseSlots & IResourceable)):boolean;
+    equipItem(itemToEquip:(IUseSlots & IResourceable), forceEquip:boolean):boolean;
+    unequipItem(itemToUnequip:(IUseSlots & IResourceable)):boolean;
 }
 
-export interface UsesSlots {
+export interface IUseSlots {
     getSlotsUsed():Bag<string>;
-    getEquippedTo():HasSlots;
+    getEquippedTo():IHasSlots;
 
-    equipTo(slotProvider:HasSlots):void;
-    unequipFrom(slotProvider:HasSlots):boolean;
+    equipTo(slotProvider:IHasSlots):void;
+    unequipFrom(slotProvider:IHasSlots):boolean;
 }
 
-export interface Resourceable extends UsesSlots {
+export interface Activateable { //TODO: Review this - merge with Resourceable?
+    timeSinceLastUpdate:number;
+
+    isActive():boolean;
+    setActive():boolean;
+    setInactive():boolean;
+
+    getActivePowerDraw():number;
+    getPowerDraw():number;
+
+    /**
+     * Gets the number of times a second this activates. Set to 0 for "activate every update" (expensive!).
+     */
+    getTickRate():number;
+
+    /**
+     * This method is called getTickRate() times a second.
+     * Implement the activatable behaviour in here.
+     */
+    activate():void;
+
+    /**
+     * Controls when activate() is called.
+     */
+    tick(timeSinceLastTick:number):void;
+}
+
+export interface IResourceable {
+
+    /**
+     * Gets the mass of this component.
+     */
     getMass():number;
+
+    /**
+     * Gets the mass of this component and all subcomponents
+     */
     getMassTotal():number;
 
-    getEnergyDraw():number;
-    getEnergyDrawTotal():number;
+    /**
+     * Gets the passive power draw of this component.
+     */
+    getPassivePowerDraw():number;
+
+    /**
+     * Gets the current power draw of this component only.
+     */
+    getPowerDraw():number;
+
+    /**
+     * Gets the current power draw of this component and all subcomponents.
+     */
+    getPowerDrawTotal():number;
 }
 
-export class SlotProvider implements HasSlots {
+export class SlotProvider implements IHasSlots {
 
-    private equipped:Bag<Resourceable>; // "weaponMount_twinCannons has [weapon_cannon105, weapon_cannon25] equipped"
+    // "weaponMount_twinCannons has [weapon_cannon105, weapon_cannon25] equipped"
+    private equipped:Bag<(IUseSlots & IResourceable)> = new Bag<(IUseSlots & IResourceable)>();
 
     constructor(
         private slotsProvided:string[] // list of slots that other equipment can go into
     ) {
-        this.equipped = new Bag<Resourceable>();
     }
 
     /**
@@ -53,7 +100,7 @@ export class SlotProvider implements HasSlots {
         return result;
     }
 
-    public getEquipped():Bag<Resourceable> {
+    public getEquipped():Bag<(IUseSlots & IResourceable)> {
         return this.equipped;
     }
 
@@ -73,7 +120,7 @@ export class SlotProvider implements HasSlots {
         return slotsRemaining;
     }
 
-    public canEquipItem(itemToEquip:Resourceable):boolean {
+    public canEquipItem(itemToEquip:(IUseSlots & IResourceable)):boolean {
         try {
             utils.bagSubtract(this.getSlotsOpen(), itemToEquip.getSlotsUsed());
         } catch (error) {
@@ -87,7 +134,7 @@ export class SlotProvider implements HasSlots {
      * @param forceEquip (optional): Equip even if there are not enough slots to equip this item.
      * @returns {boolean} Was this a valid equip request?
      */
-    public equipItem(itemToEquip:Resourceable, forceEquip:boolean=false):boolean {
+    public equipItem(itemToEquip:(IUseSlots & IResourceable), forceEquip:boolean=false):boolean {
         if (forceEquip || this.canEquipItem(itemToEquip)) {
             // Two-way linking
             this.equipped.add(itemToEquip);
@@ -97,7 +144,7 @@ export class SlotProvider implements HasSlots {
         return false;
     }
 
-    public unequipItem(itemToUnequip:Resourceable) {
+    public unequipItem(itemToUnequip:(IUseSlots & IResourceable)) {
         if (this.equipped.contains(itemToUnequip)) {
             this.equipped.remove(itemToUnequip);
             itemToUnequip.unequipFrom(this);
@@ -108,9 +155,9 @@ export class SlotProvider implements HasSlots {
 
 }
 
-export class SlotConsumer implements UsesSlots {
+export class SlotConsumer implements IUseSlots {
 
-    equippedTo:HasSlots; // "weapon_cannon105 is equipped to weaponMount_twinCannons"
+    equippedTo:IHasSlots; // "weapon_cannon105 is equipped to weaponMount_twinCannons"
 
     constructor(
         private slotsUsed:string[] // list of slots this equipment uses up
@@ -125,15 +172,15 @@ export class SlotConsumer implements UsesSlots {
         return result;
     }
 
-    public getEquippedTo():HasSlots {
+    public getEquippedTo():IHasSlots {
         return this.equippedTo;
     }
 
-    public equipTo(slotProvider:HasSlots):void {
+    public equipTo(slotProvider:IHasSlots):void {
         this.equippedTo = slotProvider;
     }
 
-    public unequipFrom(slotProvider:HasSlots):boolean {
+    public unequipFrom(slotProvider:IHasSlots):boolean {
         if (slotProvider == this.equippedTo) {
             this.equippedTo = null;
             return true;
@@ -145,7 +192,7 @@ export class SlotConsumer implements UsesSlots {
 export class ResourceData {
     constructor(
         private mass:number, // kg
-        private energyDraw:number // watts
+        private passivePowerDraw:number // watts
         ) {
     }
 
@@ -153,43 +200,57 @@ export class ResourceData {
         return this.mass;
     }
 
-    getEnergyDraw():number {
-        return this.energyDraw;
+    getPassivePowerDraw():number {
+        return this.passivePowerDraw;
+    }
+}
+
+export class ActivateableResourceData extends ResourceData {
+    constructor(
+        mass:number, // kg
+        passivePowerDraw:number, // watts
+        private activePowerDraw:number // watts
+    ) {
+        super(mass, passivePowerDraw);
+    }
+
+    public getActivePowerDraw():number {
+        return this.activePowerDraw;
     }
 }
 
 /**
- * ItemBase describes any item in the game.
- * Items consume zero or more slots.
- * Items provide zero or more slots.
- * Items have a mass.
- * Items consume zero or more power.
+ * ComponentBase describes any component in the game.
+ * Components consume zero or more slots.
+ * Components provide zero or more slots.
+ * Components have a mass.
+ * Components consume zero or more power.
  */
-export abstract class ItemBase implements Identifiable, Resourceable, UsesSlots, HasSlots {
+export abstract class ComponentBase implements IIdentifiable, IResourceable, IUseSlots, IHasSlots {
 
     constructor(
         private id:string, // must be globally unique
         private name:string,
-        private slotsFilling:SlotConsumer, 
-        private slotsProviding:SlotProvider,
+        private slotsFilling:IUseSlots, 
+        private slotsProviding:IHasSlots,
 
         protected data:ResourceData
     ) {
     }
 
-    getId():string {
+    public getId():string {
         return this.id;
     }
 
-    getName():string {
+    public getName():string {
         return this.name;
     }
     
-    getMass():number {
+    public getMass():number {
         return this.data.getMass();
     }
     
-    getMassTotal():number {
+    public getMassTotal():number {
         let totalMass:number = this.getMass();
         for (let equipped of this.slotsProviding.getEquipped().toArray()) {
             totalMass += equipped.getMassTotal();
@@ -197,55 +258,129 @@ export abstract class ItemBase implements Identifiable, Resourceable, UsesSlots,
         return totalMass;
     }
 
-    getEnergyDraw():number {
-        return this.data.getEnergyDraw();
+    public getPassivePowerDraw():number {
+        return this.data.getPassivePowerDraw();
     }
 
-    getEnergyDrawTotal():number {
-        let totalEnergyDraw:number = this.getEnergyDraw();
+    public getPowerDraw():number {
+        return this.getPassivePowerDraw();
+    }
+
+    public getPowerDrawTotal():number {
+        let totalPowerDraw:number = this.getPowerDraw();
         for (let equipped of this.slotsProviding.getEquipped().toArray()) {
-            totalEnergyDraw += equipped.getEnergyDrawTotal();
+            totalPowerDraw += (<IResourceable> equipped).getPowerDrawTotal();
         }
-        return totalEnergyDraw;
+        return totalPowerDraw;
     }
 
-    getSlotsUsed():Bag<string> {
+    public getSlotsUsed():Bag<string> {
         return this.slotsFilling.getSlotsUsed();
     }
 
-    getEquippedTo():HasSlots {
+    public getEquippedTo():IHasSlots {
         return this.slotsFilling.getEquippedTo();
     }
 
-    equipTo(slotProvider:HasSlots):void {
+    public equipTo(slotProvider:IHasSlots):void {
         return this.slotsFilling.equipTo(slotProvider);
     }
 
-    unequipFrom(slotProvider:HasSlots):boolean {
+    public unequipFrom(slotProvider:IHasSlots):boolean {
         return this.slotsFilling.unequipFrom(slotProvider);
     }
 
-    getEquipped():Bag<Resourceable> {
+    public getEquipped():Bag<(IUseSlots & IResourceable)> {
         return this.slotsProviding.getEquipped();
     }
 
-    getSlotsOpen():Bag<string> {
+    public getSlotsOpen():Bag<string> {
         return this.slotsProviding.getSlotsOpen();
     }
 
-    getSlotsProvided():Bag<string> {
+    public getSlotsProvided():Bag<string> {
         return this.slotsProviding.getSlotsProvided();
     }
 
-    canEquipItem(itemToEquip:Resourceable):boolean {
+    public canEquipItem(itemToEquip:(IUseSlots & IResourceable)):boolean {
         return this.slotsProviding.canEquipItem(itemToEquip);
     }
 
-    equipItem(itemToEquip:Resourceable, forceEquip?:boolean):boolean {
+    public equipItem(itemToEquip:(IUseSlots & IResourceable), forceEquip?:boolean):boolean {
         return this.slotsProviding.equipItem(itemToEquip, forceEquip);
     }
 
-    unequipItem(itemToUnequip:Resourceable):boolean {
+    public unequipItem(itemToUnequip:(IUseSlots & IResourceable)):boolean {
         return this.slotsProviding.unequipItem(itemToUnequip);
+    }
+}
+
+export abstract class ActivateableComponent extends ComponentBase implements Activateable {
+
+    protected isActivated:boolean = false;
+    public timeSinceLastUpdate:number = 0;
+
+    constructor(
+        id:string, // must be globally unique
+        name:string,
+        slotsFilling:SlotConsumer, 
+        slotsProviding:SlotProvider,
+        data:ActivateableResourceData,
+    ) {
+        super(id, name, slotsFilling, slotsProviding, data);
+    }
+
+    public isActive():boolean {
+        return this.isActivated;
+    }
+
+    public setActive():boolean {
+        if (!this.isActivated) {
+            this.isActivated = true;
+            return true;
+        }
+        return false;
+    }
+
+    public setInactive():boolean {
+        if (this.isActivated) {
+            this.isActivated = false;
+            return true;
+        }
+        return false;
+    }
+
+    public getActivePowerDraw() {
+        return (this.data as ActivateableResourceData).getActivePowerDraw();
+    }
+
+    // @Override
+    public getPowerDraw() {
+        let result = this.getPassivePowerDraw()
+        if (this.isActive()) {
+            result += this.getActivePowerDraw();
+        }
+
+        return result;
+    }
+
+    public abstract getTickRate():number;
+
+    public abstract activate();
+
+    public tick(timeSinceLastTick:number):void {
+        // If tickRate is 0 activate immediately.
+        let tickRate = this.getTickRate();
+        if (tickRate == 0) {
+            return this.activate();
+        }
+
+        this.timeSinceLastUpdate += timeSinceLastTick;
+
+        let willActivate = false;
+        while (this.timeSinceLastUpdate > tickRate) {
+            this.timeSinceLastUpdate -= this.getTickRate();
+            this.activate();
+        }
     }
 }

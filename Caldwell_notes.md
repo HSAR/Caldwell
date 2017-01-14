@@ -26,7 +26,16 @@
   - Loading and retrieving static data (textures, properties)
     - Global static object?
       - Retrieve data objects by ID and expected type?
+    - Serialization & deserialization
     - (Future) Investigate objects with dynamic properties: for example, a weapon with high heat capacity, but that becomes less accurate when hot.
+
+- Game content
+  - (Future) Damage types? Ammo variety, armour resistance values.
+    - Armour piercing
+    - Incendiary
+    - High explosive
+
+
   
 ## NB
 
@@ -47,7 +56,11 @@
     - Power draw shuts down the ship if energy supply does not match demand. Total shutdown, not partial shutdown (prevents E:D-like necessity for configuration of energy priority).
       - Heavier reactors provide more energy.
       - Adding capacitor batteries provide short-term refilling pools of energy. Possible to factor in inefficiency?
-  - Slots only support a limited mass and power draw?
+  - (Future) Slots only support a limited mass and power draw?
+  - Armour protects a certain component and is degraded when hit. 
+    - Perpendicular hits transfer full damage, angled hits proportionally less.
+    - Item HP? Armoured items (e.g. turrets, ammo boxes)?
+    - (Future) Line of sight, damage localisation? Armour plates should protect components underneat, but only underneath.
 
   - Reactor weight example
     - MT30 gas turbine
@@ -59,15 +72,18 @@
 
 - Side-scrolling vehicle swinging through cavern 
 - Player roles
-  - P1 handles movement: projective-based grappling hook onto environment/enemy (enemy takes damage)
-  - P2 handles guns/miscellaneous
+  - P1 handles movement: projectile-based grappling hook onto environment/enemy (enemy takes damage)
+  - P2 handles equipment: guns, defences, power
 
 - Weapons have physical attributes - guns have recoil, limited (weight-costing) ammunition
 - Customisation for both P1 and P2, mostly balanced on weight (lightness = better maneuverability)
   - P1 customises the vehicle
     - Armour plating (+ protection - lightness)
     - Hook firing system (+ faster projectile - lightness - energy)
-    - Reactor (+ energy - lightness)
+    - Power systems (+ energy - lightness)
+      - Reactor (+ continuous energy - lots of lightness)
+         - "Fueled" reactors? Require "ammo", but much lighter than normal
+      - Capacitors (+ pool of energy - lightness)
     - Turret (+ weapon mounts - lightness) (mounts are roughly 25-50% the mass of the weapon they mount)
         - Shock absorbing mounts (+ recoil reduction - lightness)
   - P2 customises the weaponry
