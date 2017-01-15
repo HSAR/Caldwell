@@ -56,8 +56,9 @@ export class ShipEntity {
 
 console.log(JSON.stringify(
     [
-        new Ship("ship_destroyer_distantMountain", "Distant Mountain-class destroyer", 120000000, 1000, ["slot_engine_large", "slot_reactor_large", "slot_weapon_railgun", "slot_weapon_autocannon", "slot_weapon_autocannon"]),
-        new Ship("ship_shuttle_lifeboat", "Severn-class shuttle", 30000, 10,  ["slot_engine_small", "slot_reactor_small", "slot_weapon_machinegun"]),
-        new Ship("ship_corvette_kamorta", "Kamorta-class corvette", 3000000, 100, ["slot_engine_medium", "slot_reactor_medium", "slot_weapon_autocannon"])
+        new Ship("ship_destroyer_distantMountain", "Distant Mountain-class destroyer", 120000000, 1000, ["slot_engine_large", "slot_reactor_large", "slot_mount_large", "slot_mount_medium", "slot_mount_medium"]),
+        new Ship("ship_shuttle_lifeboat", "Severn-class shuttle", 30000, 10,  ["slot_engine_small", "slot_reactor_small", "slot_mount_small"]),
+        new Ship("ship_fastAttack_gepard", "Gepard-class fast attack craft", 390000, 20,  ["slot_engine_medium", "slot_reactor_medium", "slot_mount_medium"]),
+        new Ship("ship_corvette_kamorta", "Kamorta-class corvette", 3000000, 100, ["slot_engine_medium", "slot_reactor_medium", "slot_mount_medium", "slot_mount_medium"])
     ]
 ));

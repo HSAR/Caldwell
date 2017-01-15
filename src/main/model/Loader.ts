@@ -285,7 +285,6 @@ export class Loader extends ActivateableComponent implements IHaveAmmo, IUseAmmo
     }
 
     static fromJSON(serialized:LoaderSerialization): Loader {
-        let user = Object.create(Loader.prototype);
         return new Loader(
             serialized.id,
             serialized.name,

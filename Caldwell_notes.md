@@ -23,7 +23,7 @@
   - Front-end UX and features?
 
 - Game object modelling
-  - Loading and retrieving static data (textures, properties)
+  - Loading and retrieving static data (textures, properties) - [link](http://excaliburjs.com/docs/api/v0.8.0/classes/ex.resource.html)
     - Global static object?
       - Retrieve data objects by ID and expected type?
     - Serialization & deserialization
