@@ -28,6 +28,7 @@
       - Retrieve data objects by ID and expected type?
     - Serialization & deserialization
     - (Future) Investigate objects with dynamic properties: for example, a weapon with high heat capacity, but that becomes less accurate when hot.
+    - Exploding rounds: Algorithm for finding the closest point it will pass to the target. Explode at that point.
 
 - Game content
   - (Future) Damage types? Ammo variety, armour resistance values.
@@ -67,6 +68,13 @@
       - Mass: 77000 kg
       - Energy: 36000000 W
 
+  - Loaders, Ammo Boxes and Magazines
+    - Ammo boxes provide generic ammunition storage of any number of types of ammo.
+      - (Future) Ammo boxes have limited weight capacity?
+    - Magazines/Belts: Smaller caliber weapons up to 40mm and all loaders may directly load from a fixed magazine, or from a belt in a single ammo box. Loader required to load from multiple boxes.
+      - Implementation: MagLoader reloads N rounds at a time. BoxLoader has fast 1-round reload speed but switches boxes slowly.
+    - Cannons must use a loader to enter the ammo system.
+
 
 ## Gameplay Design Notes
 
@@ -82,7 +90,7 @@
     - Hook firing system (+ faster projectile - lightness - energy)
     - Power systems (+ energy - lightness)
       - Reactor (+ continuous energy - lots of lightness)
-         - "Fueled" reactors? Require "ammo", but much lighter than normal
+         - (Future) "Fueled" reactors? Require "ammo", but much lighter than normal
       - Capacitors (+ pool of energy - lightness)
     - Turret (+ weapon mounts - lightness) (mounts are roughly 25-50% the mass of the weapon they mount)
         - Shock absorbing mounts (+ recoil reduction - lightness)
@@ -94,4 +102,4 @@
       - Magazines (+ rounds fired at max firerate - reload time - lightness (loader + magazine weight))
       - Pools (+ rounds fired at max firerate - lightness)
       - Belt (rounds fired at rate of loader)
-    - Cooling (+ firerate sustained - lightness)
+    - (Future) Cooling (+ firerate sustained - lightness)

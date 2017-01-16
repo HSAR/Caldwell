@@ -4,7 +4,10 @@
 
 import { Entity } from "../Entity";
 import { ActivateableComponent, ActivateableResourceData, SlotConsumer, SlotProvider } from "./Equippable";
-import { IUseAmmo, IHaveAmmo } from "./Loader";
+import { AmmoType } from "./Ammo";
+import { AmmoConsumer, AmmoProvider, IUseAmmo, IHaveAmmo } from "./Loader";
+
+import { StaticTextCollection } from "../util/StaticTextCollection";
 
 export class WeaponSerialization {
 
@@ -28,7 +31,11 @@ export class WeaponSerialization {
     }
 }
 
-export /*abstract*/ class Weapon extends ActivateableComponent {
+export /*abstract*/ class Weapon extends ActivateableComponent implements IUseAmmo {
+
+    public static readonly PREFIX:string = "weapon_";
+
+    private internalAmmoConsumer:IUseAmmo;
 
     constructor(
         id:string, // must be globally unique
@@ -40,7 +47,7 @@ export /*abstract*/ class Weapon extends ActivateableComponent {
         private slotsUsed:string[], 
         private slotsProvided:string[],
 
-        public ammoType:string,
+        public ammoClass:string,
         
         public fireRate:number, // rounds per second
         public accuracy:number, // minutes of arc
@@ -54,6 +61,7 @@ export /*abstract*/ class Weapon extends ActivateableComponent {
             new SlotProvider(slotsProvided), 
             new ActivateableResourceData(mass, passivePowerDraw, activePowerDraw)
         );
+        this.internalAmmoConsumer = new AmmoConsumer([], AmmoType.getAmmoTypesFilteredByClass(ammoClass)[0]);
     }
 
     /*protected abstract fire(timesToFire:number):void; */
@@ -67,6 +75,43 @@ export /*abstract*/ class Weapon extends ActivateableComponent {
         // #TODO: Figure out what to do here
         //this.fire(1);
         return;
+    }
+
+    public activate():void {
+        if (this.internalAmmoConsumer.consumeRounds(1) < 1) {
+            // TODO: *click*
+            return;
+        }
+        // TODO: Fire!
+    }
+
+    public getAmmoType():AmmoType {
+        return this.internalAmmoConsumer.getAmmoType();
+    }
+
+    public setAmmoType(ammoType:AmmoType):boolean {
+        // Weapons cannot change their ammo class (this may change)
+        if (this.ammoClass != ammoType.ammoClass) {
+            return false;
+        }
+
+        return this.internalAmmoConsumer.setAmmoType(ammoType);
+    }
+
+    public getAmmoSources():IHaveAmmo[] {
+        return this.internalAmmoConsumer.getAmmoSources();
+    }
+
+    public addAmmoSource(ammoSource:IHaveAmmo):boolean {
+        return this.internalAmmoConsumer.addAmmoSource(ammoSource);
+    }
+
+    public removeAmmoSource(ammoSource:IHaveAmmo):boolean {
+        return this.internalAmmoConsumer.removeAmmoSource(ammoSource);
+    }
+
+    public consumeRounds(roundsRequested:number):number {
+        return this.internalAmmoConsumer.consumeRounds(roundsRequested);
     }
 
     static fromJSON(serialized:WeaponSerialization): Weapon {
@@ -102,9 +147,9 @@ export class WeaponEntity {
 console.log(JSON.stringify(
     [
         new WeaponSerialization("weapon_autocannon_30mm_Mk44", "Mk44 Bushmaster II 30mm autocannon", 160, 0, 750, ["slot_weapon_light_cannon"], ["slot_loader_cannon"], "ammo_030x173mm", 3.33, 8.6, 200000, 50),
-        new WeaponSerialization("weapon_railgun_25MW_M213_standalone", "M213 Recurve 25MW railgun", 57000, 0, 25000000,  ["slot_weapon_heavy_cannon"], ["slot_loader_railgun"], "ammo_155x300mm_railgun", 0.1, 1.5, 33000000, 200),
+        new WeaponSerialization("weapon_railgun_25MW_M213_standalone", "M213 Recurve 25MW railgun", 57000, 0, 25000000,  ["slot_weapon_heavy_cannon"], ["slot_loader_cannon"], "ammo_155x300mm_railgun", 0.1, 1.5, 33000000, 200),
         new WeaponSerialization("weapon_railgun_25MW_M213_assisted", "M213 Recurve 25MW railgun (reactor-assisted)", 57100, 0, 25000000,  ["slot_weapon_heavy_cannon"], ["slot_loader_railgun", "slot_reactor_small"], "ammo_155x300mm_railgun", 0.1, 1.5, 33000000, 200),
-        new WeaponSerialization("weapon_machinegun_12.7mm_M2", "M2 Browning heavy machine gun", 38, 0, 0, ["slot_weapon_machinegun"], [], "ammo_012x099mm", 15, 0.7, 11100, 25),
-        new WeaponSerialization("weapon_cannon_113mm_Mk8", "Mk8 4.5-inch Naval Gun", 2400, 0, 18080, ["slot_weapon_machinegun"], [], "ammo_012x099mm", 0.4, 1.76, 8000000, 25)
+        new WeaponSerialization("weapon_machinegun_12.7mm_M2", "M2 Browning heavy machine gun", 38, 0, 0, ["slot_weapon_machinegun"], ["slot_loader_machinegun"], "ammo_012x099mm", 15, 0.7, 11100, 25),
+        new WeaponSerialization("weapon_cannon_113mm_Mk8", "Mk8 4.5-inch Naval Gun", 2400, 0, 18080, ["slot_weapon_medium_cannon"], [], "ammo_113x1238mm", 0.4, 1.76, 8000000, 25)
     ]
 ));

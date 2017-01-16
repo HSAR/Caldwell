@@ -9,7 +9,7 @@ var getImageOutline = require("image-outline");
 var hull = require("hull.js");
 
 import { PhysicsWorld } from "./physics";
-import { Graphics } from "./graphics";
+import { StaticBitmapCollection } from "./util/StaticBitmap";
 
 export enum SupportedShape { Box, Convex, Concave };
 
@@ -56,7 +56,7 @@ export class EntityBuilder {
     protected desiredShape:SupportedShape = null;
     protected desiredMass:number = 1;
 
-    protected graphics:Graphics = null;
+    protected bitmaps:StaticBitmapCollection = null;
 
     public setPosition(pos:Vector):EntityBuilder {
         this.result.pos.setTo(pos.x, pos.y);
@@ -88,14 +88,14 @@ export class EntityBuilder {
         return this;
     }
 
-    public addSprite(graphics:Graphics, textureRef:string):EntityBuilder {
-        this.graphics = graphics;
-        if (graphics.getTexture(textureRef) == null) {
+    public addSprite(bitmaps:StaticBitmapCollection, textureRef:string):EntityBuilder {
+        this.bitmaps = bitmaps;
+        if (bitmaps.getTexture(textureRef) == null) {
             console.log(`Failed to find texture at path ${textureRef}.`)
             return this;
         }
 
-        let sprite:Sprite = graphics.getTexture(textureRef).asSprite();
+        let sprite:Sprite = bitmaps.getTexture(textureRef).asSprite();
 
         this.result.addDrawing(sprite);
         this.result.textureRef = textureRef;
@@ -188,7 +188,7 @@ export class EntityBuilder {
                 collisionBody.addShape(collisionShape);
                 return Promise.resolve();
             case SupportedShape.Concave:
-                return this.createCollisionFromBitmap(collisionBody, this.graphics.getTexture(result.textureRef).path);
+                return this.createCollisionFromBitmap(collisionBody, this.bitmaps.getTexture(result.textureRef).path);
             default:
                 return Promise.reject(new Error("Unsupported physics shape"));
         }

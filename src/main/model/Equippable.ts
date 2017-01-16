@@ -366,7 +366,7 @@ export abstract class ActivateableComponent extends ComponentBase implements Act
 
     public abstract getTickRate():number;
 
-    public abstract activate();
+    public abstract activate():void;
 
     public tick(timeSinceLastTick:number):void {
         // Tick all children

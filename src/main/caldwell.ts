@@ -1,7 +1,7 @@
 /// <reference path="../../typings/index.d.ts" />
 /// <reference path="../../node_modules/excalibur/dist/excalibur.d.ts" />
 
-import path = require("path");
+import * as path from "path";
 
 import * as ex from "excalibur";
 import { Actor, Engine, IEngineOptions, Sprite, Texture, Vector } from "excalibur";
@@ -9,7 +9,8 @@ import * as p2 from "p2";
 import { Body, Shape } from "p2";
 
 import { PhysicsWorld } from "./physics";
-import { Graphics } from "./graphics";
+import { StaticBitmapCollection } from "./util/StaticBitmapCollection";
+import { StaticTextCollection } from "./util/StaticTextCollection";
 import { Entity, EntityBuilder, SupportedShape } from "./Entity";
 
 var game:Engine = new Engine({
@@ -21,8 +22,14 @@ var game:Engine = new Engine({
 // IEngineOptions.pointerScope = ex.Input.PointerScope.Canvas;
 
 // Load textures
-let graphics = new Graphics(path.join(__dirname, "assets", "materials"));
-var loader = new ex.Loader(graphics.getAllTextures());
+let bitmaps = new StaticBitmapCollection(path.join(__dirname, "assets", "materials"));
+let jsonFiles = new StaticTextCollection(path.join(__dirname, "assets", "data"));
+var loader = new ex.Loader(
+    new Array<ex.ILoadable>().concat(
+        bitmaps.getAllTextures(),
+        jsonFiles.getAllResources(),
+    )
+);
 
 // Setup physics world
 var physics = new PhysicsWorld(game);
@@ -33,7 +40,7 @@ game.start(loader).then(() => {
     // Crosshairs
     var cursor:Entity;
     new EntityBuilder()
-        .addSprite(graphics, "crosshairs.png")
+        .addSprite(bitmaps, "crosshairs.png")
         .setSize(64, 0)
         .build().then((entity:Entity) => {
             cursor = entity;
@@ -43,7 +50,7 @@ game.start(loader).then(() => {
     // Gun
     var gun:Entity;
     new EntityBuilder()
-        .addSprite(graphics, "stoner63.png")
+        .addSprite(bitmaps, "stoner63.png")
         .setSize(180, 0)
         .setPosition(new Vector(game.getWidth() / 4, game.getHeight() / 2))
         .setPhysics(physics, SupportedShape.Concave, 0)
@@ -71,7 +78,7 @@ game.start(loader).then(() => {
 
         let casing:Entity;
         new EntityBuilder()
-            .addSprite(graphics, "casing.png")
+            .addSprite(bitmaps, "casing.png")
             .setSize(10, 0)
             .setPosition(gun.pos.add(ejectVector))
             .setAngle(gun.rotation)

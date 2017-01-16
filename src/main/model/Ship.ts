@@ -8,6 +8,19 @@ import { IIdentifiable } from "./General";
 import { ActivateableComponent, ActivateableResourceData, SlotConsumer, SlotProvider } from "./Equippable";
 import { IHasSlots, IUseSlots } from "./Equippable";
 
+export class ShipSerialization {
+
+    constructor(
+        public id:string, // must be globally unique
+        public name:string,
+        public mass:number, // kg
+        public passivePowerDraw:number, // watts
+
+        public slotsProvided:string[]
+    ) {
+    }
+}
+
 /**
  * Ships consume no slots.
  */
@@ -56,9 +69,9 @@ export class ShipEntity {
 
 console.log(JSON.stringify(
     [
-        new Ship("ship_destroyer_distantMountain", "Distant Mountain-class destroyer", 120000000, 1000, ["slot_engine_large", "slot_reactor_large", "slot_mount_large", "slot_mount_medium", "slot_mount_medium"]),
-        new Ship("ship_shuttle_lifeboat", "Severn-class shuttle", 30000, 10,  ["slot_engine_small", "slot_reactor_small", "slot_mount_small"]),
-        new Ship("ship_fastAttack_gepard", "Gepard-class fast attack craft", 390000, 20,  ["slot_engine_medium", "slot_reactor_medium", "slot_mount_medium"]),
-        new Ship("ship_corvette_kamorta", "Kamorta-class corvette", 3000000, 100, ["slot_engine_medium", "slot_reactor_medium", "slot_mount_medium", "slot_mount_medium"])
+        new ShipSerialization("ship_destroyer_distantMountain", "Distant Mountain-class destroyer", 120000000, 1000, ["slot_engine_large", "slot_reactor_large", "slot_mount_large", "slot_mount_medium", "slot_mount_medium"]),
+        new ShipSerialization("ship_shuttle_lifeboat", "Severn-class shuttle", 30000, 10,  ["slot_engine_small", "slot_reactor_small", "slot_mount_small"]),
+        new ShipSerialization("ship_fastAttack_gepard", "Gepard-class fast attack craft", 390000, 20,  ["slot_engine_medium", "slot_reactor_medium", "slot_mount_medium"]),
+        new ShipSerialization("ship_corvette_kamorta", "Kamorta-class corvette", 3000000, 100, ["slot_engine_medium", "slot_reactor_medium", "slot_mount_medium", "slot_mount_medium"])
     ]
 ));

@@ -17,6 +17,9 @@ export class ReactorSerialization {
 }
 
 export class Reactor extends ComponentBase {
+
+    public static readonly PREFIX:string = "reactor_";
+
     constructor(
         id:string, // must be globally unique
         name:string,

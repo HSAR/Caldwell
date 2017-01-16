@@ -1,16 +1,13 @@
 /// <reference path="../../../typings/index.d.ts" />
 
 import { Bag } from 'typescript-collections';
+import * as path from "path";
 
 import { Entity } from "../Entity";
 import { ActivateableComponent, ActivateableResourceData, ComponentBase, ResourceData, SlotConsumer, SlotProvider } from "./Equippable";
 import { AmmoType } from "./Ammo";
 
-export enum ReloadType {
-    Magazine, // Weapon may fire N rounds at maximum fire rate, then stops until entire magazine is replaced.
-    Pool, // Weapon may fire N rounds at maximum fire rate, then is limited by loader supply rate. Pool refills if not full, even if weapon is not firing.
-    Belt, // Weapon is limited by loader supply rate. N rounds are held "in the belt".
-}
+import { StaticTextCollection } from "../util/StaticTextCollection";
 
 export interface IHaveAmmo {
 
@@ -50,9 +47,9 @@ export interface IUseAmmo {
     removeAmmoSource(ammoSource:IHaveAmmo):boolean;
 
     /**
-     * Load roundsLoaded rounds. Returns the number of rounds actually loaded.
+     * Consume roundsRequested rounds from attached ammo sources. Returns the number of rounds actually fed.
      */
-    loadRounds(roundsRequested:number):number;
+    consumeRounds(roundsRequested:number):number;
 }
 
 export class AmmoProvider implements IHaveAmmo {
@@ -60,10 +57,11 @@ export class AmmoProvider implements IHaveAmmo {
     private roundsLoaded:Bag<AmmoType> = new Bag<AmmoType>();
 
     constructor(
-        roundsToLoad:[[string, number]] // Multiple types can be supported. [["ammo_012x099mm", 100], ["ammo_030x173mm_shell", 10]] 
+        roundsToLoad:[string, number][] // Multiple types can be supported. [["ammo_012x099mm", 100], ["ammo_030x173mm_shell", 10]] 
     ) {
+        let ammoTypes:Map<string, AmmoType> = AmmoType.getAmmoTypeMap();
         for (let ammoType of roundsToLoad) {
-            this.roundsLoaded.add(ammoType[0], ammoType[1]);
+            this.roundsLoaded.add(ammoTypes.get(ammoType[0]), ammoType[1]);
         }
     }
 
@@ -118,7 +116,11 @@ export class AmmoConsumer implements IUseAmmo {
         return false;
     }
 
-    public loadRounds(roundsRequested:number):number {
+    /**
+     * Request rounds from ammo sources attached to this AmmoConsumer.
+     * Returns the actual number of rounds consumed.
+     */
+    public consumeRounds(roundsRequested:number):number {
         let roundsServed = 0;
         for (let ammoSource of this.ammoSources) {
             roundsServed += ammoSource.requestRounds(this.ammoType, roundsRequested - roundsServed);
@@ -191,10 +193,9 @@ export class LoaderSerialization {
         public slotsUsed:string[], 
         public slotsProvided:string[],
 
-        public compatibleAmmoTypes:string[],
+        public ammoClasses:string[],
         public maxLoadedRounds,
 
-        public reloadType:ReloadType,
         public reloadRate:number, // number of times loader activates per second
         public reloadQuantity:number // number of rounds loaded per activation
     ) {
@@ -202,6 +203,8 @@ export class LoaderSerialization {
 }
 
 export class Loader extends ActivateableComponent implements IHaveAmmo, IUseAmmo {
+
+    public static readonly PREFIX:string = "loader_";
 
     private internalAmmoConsumer:IUseAmmo;
     private internalAmmoProvider:IHaveAmmo;
@@ -220,10 +223,9 @@ export class Loader extends ActivateableComponent implements IHaveAmmo, IUseAmmo
         private slotsUsed:string[], 
         private slotsProvided:string[],
 
-        compatibleAmmoTypes:string[],
+        ammoClasses:string[],
         maxLoadedRounds,
 
-        public reloadType:ReloadType,
         public reloadRate:number, // number of times loader activates per second
         public reloadQuantity:number // number of rounds loaded per activation
     ) {
@@ -234,7 +236,12 @@ export class Loader extends ActivateableComponent implements IHaveAmmo, IUseAmmo
             new ActivateableResourceData(mass, passivePowerDraw, activePowerDraw)
         );
         this.maxLoadedRounds = maxLoadedRounds;
-        this.compatibleAmmoTypes = new Set(compatibleAmmoTypes);
+        this.compatibleAmmoTypes = new Set<AmmoType>();
+        
+        let ammoTypeMap:Map<string, AmmoType> = AmmoType.getAmmoTypeMap();
+        for (let compatibleAmmoType of ammoClasses) {
+            this.compatibleAmmoTypes.add(ammoTypeMap.get(compatibleAmmoType));
+        }
     }
 
     public getAllAvailableRounds():Bag<AmmoType> {
@@ -272,8 +279,8 @@ export class Loader extends ActivateableComponent implements IHaveAmmo, IUseAmmo
         return this.internalAmmoConsumer.removeAmmoSource(ammoSource);
     }
 
-    public loadRounds(roundsRequested:number):number {
-        return this.internalAmmoConsumer.loadRounds(roundsRequested);
+    public consumeRounds(roundsRequested:number):number {
+        return this.internalAmmoConsumer.consumeRounds(roundsRequested);
     }
 
     public getTickRate():number {
@@ -281,7 +288,7 @@ export class Loader extends ActivateableComponent implements IHaveAmmo, IUseAmmo
     }
 
     public activate():void {
-        this.loadRounds(this.maxLoadedRounds - this.internalAmmoProvider.getAvailableRounds(this.getAmmoType()));
+        this.consumeRounds(this.maxLoadedRounds - this.internalAmmoProvider.getAvailableRounds(this.getAmmoType()));
     }
 
     static fromJSON(serialized:LoaderSerialization): Loader {
@@ -293,27 +300,23 @@ export class Loader extends ActivateableComponent implements IHaveAmmo, IUseAmmo
             serialized.activePowerDraw,
             serialized.slotsUsed,
             serialized.slotsProvided,
-            serialized.compatibleAmmoTypes,
+            serialized.ammoClasses,
             serialized.maxLoadedRounds,
-            serialized.reloadType,
             serialized.reloadRate,
             serialized.reloadQuantity
         );
     }
 }
 
-export class
-
+let jsonFiles = new StaticTextCollection(path.join(__dirname, "assets", "data"));
 console.log(JSON.stringify(
     [
-        new LoaderSerialization("loader_cannon_light_belt", "Canister Belt Feed", 80, 0, 300, ["slot_loader_cannon"], [], ["ammo_030x173mm_shell"], ReloadType.Belt, 0.2),
-        new LoaderSerialization("loader_cannon_heavy_Mk7_lightSingle", "Mk7 Cannon Autoloader System", 80, 0, 300, ["slot_loader_cannon"], [], ["ammo_030x173mm_shell"], ReloadType.Belt, 0.18),
-        new LoaderSerialization("loader_cannon_heavy_Mk7_lightDual", "Mk7 Cannon Autoloader System (Dual-Feed)", 130, 0, 550, ["slot_loader_cannon"], [], ["ammo_030x173mm_shell"], ReloadType.Belt, 0.3),
-        new LoaderSerialization("loader_cannon_heavy_Mk8_heavy", "Mk8 Turret Autoloader", 650, 0, 1200, ["slot_loader_cannon"], [], ["ammo_155x300mm_railgun"], ReloadType.Belt, 0.3),
+        new LoaderSerialization("loader_cannon_belt", "Belt Feed (30mm)", 0, 0, 0, ["slot_loader_cannon"], [], ["ammo_030x173mm_shell"], 1, 0, 1),
+        new LoaderSerialization("loader_cannon_heavy_Mk7_lightSingle", "Mk7 Cannon Autoloader System", 80, 0, 300, ["slot_loader_cannon"], [], ["ammo_030x173mm_shell"], 4, 5.56, 1),
+        new LoaderSerialization("loader_cannon_heavy_Mk7_lightDual", "Mk7 Cannon Autoloader System (Dual-Feed)", 130, 0, 550, ["slot_loader_cannon"], [], ["ammo_030x173mm_shell"], 8, 4.17, 2),
+        new LoaderSerialization("loader_cannon_heavy_Mk8_medium", "Mk8 Midweight Autoloader", 300, 0, 700, ["slot_loader_cannon"], [], ["ammo_113x1238mm", "ammo_155x300mm_railgun"], 18, 0.5, 1),
+        new LoaderSerialization("loader_cannon_heavy_Mk9_heavy", "Mk9 Heavy Autoloader", 650, 0, 1200, ["slot_loader_cannon"], [], ["ammo_113x1238mm", "ammo_155x300mm_railgun"], 10, 1, 1),
         
-        new LoaderSerialization("weapon_autocannon_30mm_Mk44", "Mk44 Bushmaster II 30mm autocannon", 160, 0, 750, ["slot_weapon_cannon"], ["slot_loader_autocannon"], "ammo_030x173mm_shell", 3.33, 8.6, 200000, 50),
-        new LoaderSerialization("weapon_railgun_25MW_M213_standalone", "M213 Recurve 25MW railgun", 57000, 0, 25000000,  ["slot_weapon_cannon"], ["slot_loader_railgun"], "ammo_155x300mm_railgun", 0.1, 1.5, 33000000, 200),
-        new LoaderSerialization("weapon_railgun_25MW_M213_assisted", "M213 Recurve 25MW railgun (reactor-assisted)", 57100, 0, 25000000,  ["slot_weapon_railgun"], ["slot_reactor_small"], "ammo_155x300mm_railgun", 0.1, 1.5, 33000000, 200),
-        new LoaderSerialization("weapon_machinegun_12.7mm_M2", "M2 Browning heavy machine gun", 38, 0, 0, ["slot_weapon_machinegun"], [], "ammo_012x099mm", 15, 0.7, 11100, 25)
+        new LoaderSerialization("loader_machinegun_belt", "Belt Feed (12.7mm)", 0, 0, 0, ["slot_loader_machinegun"], [], ["ammo_012x099mm"], 1, 0, 1),
     ]
 ));
