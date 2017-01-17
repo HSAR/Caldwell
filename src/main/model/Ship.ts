@@ -8,6 +8,8 @@ import { IIdentifiable } from "./General";
 import { ActivateableComponent, ActivateableResourceData, SlotConsumer, SlotProvider } from "./Equippable";
 import { IHasSlots, IUseSlots } from "./Equippable";
 
+import { StaticTextCollection } from "../util/StaticTextCollection";
+
 export class ShipSerialization {
 
     constructor(
@@ -58,6 +60,31 @@ export class Ship extends ActivateableComponent {
     public getTickRate() {
         return 0;
     }
+
+    private static getShipMappings():[string, any][] {
+        return Array.from(StaticTextCollection.getObjectsById())
+            .filter((idToObjectMapping:[string, any]) => {
+                return idToObjectMapping[0].startsWith(Ship.PREFIX);
+            });
+    }
+
+    public static getShipMap():Map<string, Ship> {
+        return new Map<string, Ship>(Ship.getShipMappings());
+    };
+
+    public static getShips():Ship[] {
+        return Ship.getShipMappings().map(StaticTextCollection.mappingToValue);
+    };
+
+    static fromJSON(serialized:ShipSerialization):Ship {
+        return new Ship(
+            serialized.id,
+            serialized.name,
+            serialized.mass,
+            serialized.passivePowerDraw,
+            serialized.slotsProvided,
+        );
+    }
 }
 
 /**
@@ -77,9 +104,9 @@ export class ShipEntity {
 
 console.log(JSON.stringify(
     [
-        new ShipSerialization("ship_destroyer_distantMountain", "Distant Mountain-class destroyer", 120000000, 1000, ["slot_engine_large", "slot_reactor_large", "slot_mount_large", "slot_mount_medium", "slot_mount_medium"]),
-        new ShipSerialization("ship_shuttle_lifeboat", "Severn-class shuttle", 30000, 10,  ["slot_engine_small", "slot_reactor_small", "slot_mount_small"]),
-        new ShipSerialization("ship_fastAttack_gepard", "Gepard-class fast attack craft", 390000, 20,  ["slot_engine_medium", "slot_reactor_medium", "slot_mount_medium"]),
-        new ShipSerialization("ship_corvette_kamorta", "Kamorta-class corvette", 3000000, 100, ["slot_engine_medium", "slot_reactor_medium", "slot_mount_medium", "slot_mount_medium"])
+        new ShipSerialization("ship_destroyer_distantMountain", "Distant Mountain-class destroyer", 120000000, 1000, ["slot_drive_large", "slot_reactor_large", "slot_mount_large", "slot_mount_medium", "slot_mount_medium"]),
+        new ShipSerialization("ship_shuttle_lifeboat", "Severn-class shuttle", 30000, 10,  ["slot_drive_small", "slot_reactor_small", "slot_mount_small"]),
+        new ShipSerialization("ship_fastAttack_gepard", "Gepard-class fast attack craft", 390000, 20,  ["slot_drive_medium", "slot_reactor_medium", "slot_mount_medium"]),
+        new ShipSerialization("ship_corvette_kamorta", "Kamorta-class corvette", 3000000, 100, ["slot_drive_medium", "slot_reactor_medium", "slot_mount_medium", "slot_mount_medium"])
     ]
 ));

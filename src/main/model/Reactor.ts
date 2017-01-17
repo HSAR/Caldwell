@@ -3,6 +3,8 @@
 
 import { ComponentBase, IResourceable, ResourceData, SlotConsumer, SlotProvider } from "./Equippable";
 
+import { StaticTextCollection } from "../util/StaticTextCollection";
+
 export class ReactorSerialization {
     constructor(
         public id:string, // must be globally unique
@@ -37,6 +39,33 @@ export class Reactor extends ComponentBase {
             new ResourceData(mass, passivePowerDraw)
         );
     }
+
+    public getTickRate():number {
+        return 0;
+    }
+
+    public activate():void {
+        if (this.internalAmmoConsumer.consumeRounds(1) < 1) {
+            // TODO: *click*
+            return;
+        }
+        // TODO: Fire!
+    }
+
+    private static getReactorMappings():[string, any][] {
+        return Array.from(StaticTextCollection.getObjectsById())
+            .filter((idToObjectMapping:[string, any]) => {
+                return idToObjectMapping[0].startsWith(Reactor.PREFIX);
+            });
+    }
+
+    public static getReactorMap():Map<string, Reactor> {
+        return new Map<string, Reactor>(Reactor.getReactorMappings());
+    };
+
+    public static getReactors():Reactor[] {
+        return Reactor.getReactorMappings().map(StaticTextCollection.mappingToValue);
+    };
 
     static fromJSON(serialized:ReactorSerialization): Reactor {
         return new Reactor(
