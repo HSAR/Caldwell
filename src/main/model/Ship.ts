@@ -26,6 +26,8 @@ export class ShipSerialization {
  */
 export class Ship extends ActivateableComponent {
 
+    public static readonly PREFIX:string = "ship_";
+
     constructor(
         id:string, // must be globally unique
         name:string,
@@ -44,6 +46,12 @@ export class Ship extends ActivateableComponent {
         }
 
     public activate() {
+        // Check power requirements and shut down if we are drawing more power than is available
+        let powerDraw = this.getPowerDrawTotal();
+        if (powerDraw > 0) {
+            // #TODO: Shut down
+            console.log(`Player ship exceeded power supply by ${powerDraw}W`);
+        }
         return true;
     }
 

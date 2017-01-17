@@ -21,6 +21,9 @@ export class MountSerialization {
 }
 
 export class Mount extends ComponentBase {
+
+    public static readonly PREFIX:string = "mount_";
+
     private slotToFiringArc:Map<string, [number, number]> = new Map<string, [number, number]>();
 
     constructor(
