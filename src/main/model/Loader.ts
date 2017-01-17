@@ -5,7 +5,7 @@ import * as path from "path";
 
 import { Entity } from "../Entity";
 import { ActivateableComponent, ActivateableResourceData, ComponentBase, ResourceData, SlotConsumer, SlotProvider } from "./Equippable";
-import { AmmoType } from "./Ammo";
+import { AmmoClass, AmmoType } from "./Ammo";
 
 import { StaticTextCollection } from "../util/StaticTextCollection";
 
@@ -141,8 +141,6 @@ export class AmmoBox extends ComponentBase implements IHaveAmmo {
     constructor(
         id:string, // must be globally unique
         name:string,
-        mass:number, // kg
-        passivePowerDraw:number, // watts
 
         private slotsUsed:string[], 
         private slotsProvided:string[],
@@ -150,10 +148,11 @@ export class AmmoBox extends ComponentBase implements IHaveAmmo {
         roundsLoaded:[[string, number]] // Multiple types can be supported. [["ammo_012x099mm", 100], ["ammo_030x173mm_shell", 10]] 
     ) {
         super(
-            id, name,
+            "loader_ammobox",  // ammo boxes are currently singletons
+            name,
             new SlotConsumer(slotsUsed),
             new SlotProvider(slotsProvided), 
-            new ResourceData(mass, passivePowerDraw)
+            new ResourceData(0, 0) // Ammo boxes have dynamic mass (placeholder'd 0) and have 0 power draw
         );
         this.internalAmmoProvider = new AmmoProvider(roundsLoaded);
     }
@@ -179,9 +178,21 @@ export class AmmoBox extends ComponentBase implements IHaveAmmo {
     public requestRounds(ammoType:AmmoType, roundsRequested:number):number {
         return this.internalAmmoProvider.requestRounds(ammoType, roundsRequested);
     }
+
+    private static formatRoundsLoaded(roundsLoaded:[[string, number]]):string {
+        let ammoClasses:Map<string, AmmoClass> = AmmoClass.getAmmoClassMap();
+
+        let result:string[] = [];
+        for (let loading of roundsLoaded) {
+            result.push(`${loading[1]}x ${ammoClasses.get(loading[0]).name}`);
+        }
+        return `Ammo Storage (${result.join(", ")})`;
+    }
 }
 
 export class LoaderSerialization {
+
+    public static readonly PREFIX:string = "loader_";
 
     constructor(
         public id:string, // must be globally unique
