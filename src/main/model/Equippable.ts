@@ -10,9 +10,9 @@ export interface IHasSlots {
     getEquipped():Bag<(IUseSlots & IResourceable)>;
     getSlotsOpen():Bag<string>;
 
-    canEquipItem(itemToEquip:(IUseSlots & IResourceable)):boolean;
-    equipItem(itemToEquip:(IUseSlots & IResourceable), forceEquip:boolean):boolean;
-    unequipItem(itemToUnequip:(IUseSlots & IResourceable)):boolean;
+    canEquipComponent(itemToEquip:(IUseSlots & IResourceable)):boolean;
+    equipComponent(itemToEquip:(IUseSlots & IResourceable), forceEquip:boolean):boolean;
+    unequipComponent(itemToUnequip:(IUseSlots & IResourceable)):boolean;
 }
 
 export interface IUseSlots {
@@ -120,7 +120,7 @@ export class SlotProvider implements IHasSlots {
         return slotsRemaining;
     }
 
-    public canEquipItem(itemToEquip:(IUseSlots & IResourceable)):boolean {
+    public canEquipComponent(itemToEquip:(IUseSlots & IResourceable)):boolean {
         try {
             utils.bagSubtract(this.getSlotsOpen(), itemToEquip.getSlotsUsed());
         } catch (error) {
@@ -134,8 +134,8 @@ export class SlotProvider implements IHasSlots {
      * @param forceEquip (optional): Equip even if there are not enough slots to equip this item.
      * @returns {boolean} Was this a valid equip request?
      */
-    public equipItem(itemToEquip:(IUseSlots & IResourceable), forceEquip:boolean=false):boolean {
-        if (forceEquip || this.canEquipItem(itemToEquip)) {
+    public equipComponent(itemToEquip:(IUseSlots & IResourceable), forceEquip:boolean=false):boolean {
+        if (forceEquip || this.canEquipComponent(itemToEquip)) {
             // Two-way linking
             this.equipped.add(itemToEquip);
             itemToEquip.equipTo(this);
@@ -144,7 +144,7 @@ export class SlotProvider implements IHasSlots {
         return false;
     }
 
-    public unequipItem(itemToUnequip:(IUseSlots & IResourceable)) {
+    public unequipComponent(itemToUnequip:(IUseSlots & IResourceable)) {
         if (this.equipped.contains(itemToUnequip)) {
             this.equipped.remove(itemToUnequip);
             itemToUnequip.unequipFrom(this);
@@ -302,16 +302,16 @@ export abstract class ComponentBase implements IIdentifiable, IResourceable, IUs
         return this.slotsProviding.getSlotsProvided();
     }
 
-    public canEquipItem(itemToEquip:(IUseSlots & IResourceable)):boolean {
-        return this.slotsProviding.canEquipItem(itemToEquip);
+    public canEquipComponent(itemToEquip:(IUseSlots & IResourceable)):boolean {
+        return this.slotsProviding.canEquipComponent(itemToEquip);
     }
 
-    public equipItem(itemToEquip:(IUseSlots & IResourceable), forceEquip?:boolean):boolean {
-        return this.slotsProviding.equipItem(itemToEquip, forceEquip);
+    public equipComponent(itemToEquip:(IUseSlots & IResourceable), forceEquip?:boolean):boolean {
+        return this.slotsProviding.equipComponent(itemToEquip, forceEquip);
     }
 
-    public unequipItem(itemToUnequip:(IUseSlots & IResourceable)):boolean {
-        return this.slotsProviding.unequipItem(itemToUnequip);
+    public unequipComponent(itemToUnequip:(IUseSlots & IResourceable)):boolean {
+        return this.slotsProviding.unequipComponent(itemToUnequip);
     }
 }
 

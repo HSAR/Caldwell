@@ -70,13 +70,6 @@ export /*abstract*/ class Weapon extends ActivateableComponent implements IUseAm
         return this.fireRate;
     }
 
-    // @Override
-    public tick(timeSinceLastTick:number):void {
-        // #TODO: Figure out what to do here
-        //this.fire(1);
-        return;
-    }
-
     public activate():void {
         if (this.internalAmmoConsumer.consumeRounds(1) < 1) {
             // TODO: *click*
