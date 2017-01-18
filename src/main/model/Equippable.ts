@@ -2,7 +2,7 @@
 
 import { Bag } from 'typescript-collections';
 
-import { IIdentifiable } from "./General";
+import { Identifiable, IIdentifiable } from "./General";
 import * as utils from "../util/CollectionUtils";
 
 export interface IHasSlots {
@@ -23,7 +23,7 @@ export interface IUseSlots {
     unequipFrom(slotProvider:IHasSlots):boolean;
 }
 
-export interface Activateable { //TODO: Review this - merge with Resourceable?
+export interface IActivateable { //TODO: Review this - merge with Resourceable?
     timeSinceLastUpdate:number;
 
     isActive():boolean;
@@ -226,24 +226,22 @@ export class ActivateableResourceData extends ResourceData {
  * Components have a mass.
  * Components consume zero or more power.
  */
-export abstract class ComponentBase implements IIdentifiable, IResourceable, IUseSlots, IHasSlots {
+export abstract class ComponentBase extends Identifiable implements IResourceable, IUseSlots, IHasSlots {
+
+    /**
+     * All implementing classes should override this property to a class-unique value.
+     */
+    public static readonly PREFIX = "base";
 
     constructor(
-        private id:string, // must be globally unique
-        private name:string,
+        id:string, // must be globally unique
+        name:string,
         private slotsFilling:IUseSlots, 
         private slotsProviding:IHasSlots,
 
         protected data:ResourceData
     ) {
-    }
-
-    public getId():string {
-        return this.id;
-    }
-
-    public getName():string {
-        return this.name;
+        super(id, name);
     }
     
     public getMass():number {
@@ -315,7 +313,7 @@ export abstract class ComponentBase implements IIdentifiable, IResourceable, IUs
     }
 }
 
-export abstract class ActivateableComponent extends ComponentBase implements Activateable {
+export abstract class ActivateableComponent extends ComponentBase implements IActivateable {
 
     protected isActivated:boolean = false;
     public timeSinceLastUpdate:number = 0;

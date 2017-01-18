@@ -5,7 +5,7 @@
 import { Entity } from "../Entity";
 import { ActivateableComponent, ActivateableResourceData, SlotConsumer, SlotProvider } from "./Equippable";
 import { AmmoType } from "./Ammo";
-import { AmmoConsumer, AmmoProvider, IUseAmmo, IHaveAmmo } from "./Loader";
+import { ResourceConsumer, ResourceProvider, IUseResource, IHaveResource } from "./Resource";
 
 import { StaticTextCollection } from "../util/StaticTextCollection";
 
@@ -31,11 +31,11 @@ export class WeaponSerialization {
     }
 }
 
-export /*abstract*/ class Weapon extends ActivateableComponent implements IUseAmmo {
+export /*abstract*/ class Weapon extends ActivateableComponent implements IUseResource<AmmoType> {
 
     public static readonly PREFIX:string = "weapon_";
 
-    private internalAmmoConsumer:IUseAmmo;
+    private internalAmmoConsumer:IUseResource<AmmoType>;
 
     constructor(
         id:string, // must be globally unique
@@ -61,7 +61,7 @@ export /*abstract*/ class Weapon extends ActivateableComponent implements IUseAm
             new SlotProvider(slotsProvided), 
             new ActivateableResourceData(mass, passivePowerDraw, activePowerDraw)
         );
-        this.internalAmmoConsumer = new AmmoConsumer([], AmmoType.getAmmoTypesFilteredByClass(ammoClass)[0]);
+        this.internalAmmoConsumer = new ResourceConsumer([], AmmoType.getAmmoTypesFilteredByClass(ammoClass)[0]);
     }
 
     /*protected abstract fire(timesToFire:number):void; */
@@ -71,40 +71,40 @@ export /*abstract*/ class Weapon extends ActivateableComponent implements IUseAm
     }
 
     public activate():void {
-        if (this.internalAmmoConsumer.consumeRounds(1) < 1) {
+        if (this.internalAmmoConsumer.consumeResource(1) < 1) {
             // TODO: *click*
             return;
         }
         // TODO: Fire!
     }
 
-    public getAmmoType():AmmoType {
-        return this.internalAmmoConsumer.getAmmoType();
+    public getResourceType():AmmoType {
+        return this.internalAmmoConsumer.getResourceType();
     }
 
-    public setAmmoType(ammoType:AmmoType):boolean {
+    public setResourceType(ammoType:AmmoType):boolean {
         // Weapons cannot change their ammo class (this may change)
         if (this.ammoClass != ammoType.ammoClass) {
             return false;
         }
 
-        return this.internalAmmoConsumer.setAmmoType(ammoType);
+        return this.internalAmmoConsumer.setResourceType(ammoType);
     }
 
-    public getAmmoSources():IHaveAmmo[] {
-        return this.internalAmmoConsumer.getAmmoSources();
+    public getResourceProviders():IHaveResource<AmmoType>[] {
+        return this.internalAmmoConsumer.getResourceProviders();
     }
 
-    public addAmmoSource(ammoSource:IHaveAmmo):boolean {
-        return this.internalAmmoConsumer.addAmmoSource(ammoSource);
+    public addResourceProvider(ammoSource:IHaveResource<AmmoType>):boolean {
+        return this.internalAmmoConsumer.addResourceProvider(ammoSource);
     }
 
-    public removeAmmoSource(ammoSource:IHaveAmmo):boolean {
-        return this.internalAmmoConsumer.removeAmmoSource(ammoSource);
+    public removeResourceProvider(ammoSource:IHaveResource<AmmoType>):boolean {
+        return this.internalAmmoConsumer.removeResourceProvider(ammoSource);
     }
 
-    public consumeRounds(roundsRequested:number):number {
-        return this.internalAmmoConsumer.consumeRounds(roundsRequested);
+    public consumeResource(roundsRequested:number):number {
+        return this.internalAmmoConsumer.consumeResource(roundsRequested);
     }
 
     static fromJSON(serialized:WeaponSerialization): Weapon {

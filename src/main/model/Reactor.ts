@@ -40,33 +40,6 @@ export class Reactor extends ComponentBase {
         );
     }
 
-    public getTickRate():number {
-        return 0;
-    }
-
-    public activate():void {
-        if (this.internalAmmoConsumer.consumeRounds(1) < 1) {
-            // TODO: *click*
-            return;
-        }
-        // TODO: Fire!
-    }
-
-    private static getReactorMappings():[string, any][] {
-        return Array.from(StaticTextCollection.getObjectsById())
-            .filter((idToObjectMapping:[string, any]) => {
-                return idToObjectMapping[0].startsWith(Reactor.PREFIX);
-            });
-    }
-
-    public static getReactorMap():Map<string, Reactor> {
-        return new Map<string, Reactor>(Reactor.getReactorMappings());
-    };
-
-    public static getReactors():Reactor[] {
-        return Reactor.getReactorMappings().map(StaticTextCollection.mappingToValue);
-    };
-
     static fromJSON(serialized:ReactorSerialization): Reactor {
         return new Reactor(
             serialized.id,

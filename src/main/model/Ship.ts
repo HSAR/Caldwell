@@ -61,21 +61,6 @@ export class Ship extends ActivateableComponent {
         return 0;
     }
 
-    private static getShipMappings():[string, any][] {
-        return Array.from(StaticTextCollection.getObjectsById())
-            .filter((idToObjectMapping:[string, any]) => {
-                return idToObjectMapping[0].startsWith(Ship.PREFIX);
-            });
-    }
-
-    public static getShipMap():Map<string, Ship> {
-        return new Map<string, Ship>(Ship.getShipMappings());
-    };
-
-    public static getShips():Ship[] {
-        return Ship.getShipMappings().map(StaticTextCollection.mappingToValue);
-    };
-
     static fromJSON(serialized:ShipSerialization):Ship {
         return new Ship(
             serialized.id,

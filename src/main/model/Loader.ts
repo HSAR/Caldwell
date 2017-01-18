@@ -5,138 +5,14 @@ import * as path from "path";
 
 import { Entity } from "../Entity";
 import { ActivateableComponent, ActivateableResourceData, ComponentBase, ResourceData, SlotConsumer, SlotProvider } from "./Equippable";
+import { IHaveResource, IUseResource, ResourceProvider, ResourceConsumer } from './Resource';
 import { AmmoClass, AmmoType } from "./Ammo";
 
 import { StaticTextCollection } from "../util/StaticTextCollection";
 
-export interface IHaveAmmo {
+export class AmmoBox extends ComponentBase implements IHaveResource<AmmoType> {
 
-    /**
-     * Returns all rounds currently available for immediate feeding.
-     */
-    getAllAvailableRounds():Bag<AmmoType>;
-
-    /**
-     * Returns the number of rounds of a certain type currently available for immediate feeding.
-     */
-    getAvailableRounds(ammoType:AmmoType):number;
-
-    /**
-     * Request roundsRequested rounds of type ammoType. Returns the number of rounds actually supplied.
-     */
-    requestRounds(ammoType:AmmoType, roundsRequested:number):number;
-
-}
-
-export interface IUseAmmo {
-
-    /**
-     * Gets the ammo type currently being drawn.
-     */
-    getAmmoType():AmmoType;
-
-    /**
-     * Set the component to use this type of ammo. Returns true if successful.
-     */
-    setAmmoType(ammoType:AmmoType):boolean;
-
-    getAmmoSources():IHaveAmmo[];
-
-    addAmmoSource(ammoSource:IHaveAmmo):boolean;
-
-    removeAmmoSource(ammoSource:IHaveAmmo):boolean;
-
-    /**
-     * Consume roundsRequested rounds from attached ammo sources. Returns the number of rounds actually fed.
-     */
-    consumeRounds(roundsRequested:number):number;
-}
-
-export class AmmoProvider implements IHaveAmmo {
-
-    private roundsLoaded:Bag<AmmoType> = new Bag<AmmoType>();
-
-    constructor(
-        roundsToLoad:[string, number][] // Multiple types can be supported. [["ammo_012x099mm", 100], ["ammo_030x173mm_shell", 10]] 
-    ) {
-        let ammoTypes:Map<string, AmmoType> = AmmoType.getAmmoTypeMap();
-        for (let ammoType of roundsToLoad) {
-            this.roundsLoaded.add(ammoTypes.get(ammoType[0]), ammoType[1]);
-        }
-    }
-
-    getAllAvailableRounds():Bag<AmmoType> {
-        return this.roundsLoaded;
-    }
-
-    getAvailableRounds(ammoType:AmmoType):number {
-        return this.getAllAvailableRounds().count(ammoType);
-    }
-
-    requestRounds(ammoType:AmmoType, roundsRequested:number):number {
-        // If 5 rounds and 45 are requested, serve 5
-        let roundsServed = Math.min(this.getAllAvailableRounds().count(ammoType), roundsRequested);
-
-        this.roundsLoaded.remove(ammoType, roundsServed);
-        return roundsServed;
-    }
-}
-
-export class AmmoConsumer implements IUseAmmo {
-    constructor(
-        private ammoSources:IHaveAmmo[], // implemented as a list to preserve priority
-        private ammoType:AmmoType
-    ) {
-    }
-
-    public getAmmoType():AmmoType {
-        return this.ammoType;
-    }
-
-    public setAmmoType(ammoType:AmmoType):boolean {
-        this.ammoType = ammoType;
-        return true;
-    }
-
-    public getAmmoSources():IHaveAmmo[] {
-        return this.ammoSources.slice(0);
-    }
-
-    public addAmmoSource(ammoSource:IHaveAmmo):boolean {
-        this.ammoSources.push(ammoSource);
-        return true;
-    }
-
-    public removeAmmoSource(ammoSource:IHaveAmmo):boolean {
-        let index = this.ammoSources.indexOf(ammoSource)
-        if (index > -1) {
-            this.ammoSources.splice(index, 1);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Request rounds from ammo sources attached to this AmmoConsumer.
-     * Returns the actual number of rounds consumed.
-     */
-    public consumeRounds(roundsRequested:number):number {
-        let roundsServed = 0;
-        for (let ammoSource of this.ammoSources) {
-            roundsServed += ammoSource.requestRounds(this.ammoType, roundsRequested - roundsServed);
-            if (roundsServed == roundsRequested) {
-                return roundsServed;
-            }
-        }
-
-        return roundsServed;
-    }
-    
-}
-
-export class AmmoBox extends ComponentBase implements IHaveAmmo {
-
-    private internalAmmoProvider:IHaveAmmo
+    private internalAmmoProvider:IHaveResource<AmmoType>
 
     constructor(
         id:string, // must be globally unique
@@ -154,25 +30,26 @@ export class AmmoBox extends ComponentBase implements IHaveAmmo {
             new SlotProvider(slotsProvided), 
             new ResourceData(0, 0) // Ammo boxes have dynamic mass (placeholder'd 0) and have 0 power draw
         );
-        this.internalAmmoProvider = new AmmoProvider(roundsLoaded);
+        this.internalAmmoProvider = new ResourceProvider<AmmoType>(roundsLoaded);
+        // #TODO: Set the name via this.formatRoundsLoaded();
     }
     
     // @Override
     public getMass():number {
         // Mass of an ammo box is the mass of the box plus ammo within
         let ammoMass = 0;
-        for (let ammoType of this.internalAmmoProvider.getAllAvailableRounds().toArray()) {
+        for (let ammoType of this.internalAmmoProvider.getAllAvailableResources().toArray()) {
             ammoMass += ammoType.mass;
         }
         return this.data.getMass() + ammoMass;
     }
 
-    public getAllAvailableRounds():Bag<AmmoType> {
-        return this.internalAmmoProvider.getAllAvailableRounds();
+    public getAllAvailableResources():Bag<AmmoType> {
+        return this.internalAmmoProvider.getAllAvailableResources();
     }
 
-    public getAvailableRounds(ammoType:AmmoType) {
-        return this.internalAmmoProvider.getAvailableRounds(ammoType);
+    public getAvailableResource(ammoType:AmmoType) {
+        return this.internalAmmoProvider.getAvailableResource(ammoType);
     }
 
     public requestRounds(ammoType:AmmoType, roundsRequested:number):number {
@@ -213,12 +90,12 @@ export class LoaderSerialization {
     }
 }
 
-export class Loader extends ActivateableComponent implements IHaveAmmo, IUseAmmo {
+export class Loader extends ActivateableComponent implements IHaveResource<AmmoType>, IUseResource<AmmoType> {
 
     public static readonly PREFIX:string = "loader_";
 
-    private internalAmmoConsumer:IUseAmmo;
-    private internalAmmoProvider:IHaveAmmo;
+    private internalAmmoConsumer:IUseResource<AmmoType>;
+    private internalAmmoProvider:IHaveResource<AmmoType>;
 
     public readonly maxLoadedRounds:number;
 
@@ -249,49 +126,52 @@ export class Loader extends ActivateableComponent implements IHaveAmmo, IUseAmmo
         this.maxLoadedRounds = maxLoadedRounds;
         this.compatibleAmmoTypes = new Set<AmmoType>();
         
-        let ammoTypeMap:Map<string, AmmoType> = AmmoType.getAmmoTypeMap();
+        let ammoTypeMap:Map<string, AmmoType> = <Map<string, AmmoType>> AmmoType.getClassMap();
         for (let compatibleAmmoType of ammoClasses) {
             this.compatibleAmmoTypes.add(ammoTypeMap.get(compatibleAmmoType));
         }
+
+        this.internalAmmoConsumer = new ResourceConsumer<AmmoType>([], null);
+        this.internalAmmoProvider = new ResourceProvider<AmmoType>([]);
     }
 
-    public getAllAvailableRounds():Bag<AmmoType> {
-        return this.internalAmmoProvider.getAllAvailableRounds();
+    public getAllAvailableResources():Bag<AmmoType> {
+        return this.internalAmmoProvider.getAllAvailableResources();
     }
 
-    public getAvailableRounds(ammoType:AmmoType):number {
-        return this.internalAmmoProvider.getAvailableRounds(ammoType);
+    public getAvailableResource(ammoType:AmmoType):number {
+        return this.internalAmmoProvider.getAvailableResource(ammoType);
     }
 
     public requestRounds(ammoType:AmmoType, roundsRequested:number):number {
         return this.internalAmmoProvider.requestRounds(ammoType, roundsRequested);
     }
 
-    public getAmmoType():AmmoType {
-        return this.internalAmmoConsumer.getAmmoType();
+    public getResourceType():AmmoType {
+        return this.internalAmmoConsumer.getResourceType();
     }
 
-    public setAmmoType(ammoType:AmmoType):boolean {
+    public setResourceType(ammoType:AmmoType):boolean {
         if (this.compatibleAmmoTypes.has(ammoType)) {
-            return this.internalAmmoConsumer.setAmmoType(ammoType);
+            return this.internalAmmoConsumer.setResourceType(ammoType);
         }
         return true;
     }
 
-    public getAmmoSources():IHaveAmmo[] {
-        return this.internalAmmoConsumer.getAmmoSources();
+    public getResourceProviders():IHaveResource<AmmoType>[] {
+        return this.internalAmmoConsumer.getResourceProviders();
     }
 
-    public addAmmoSource(ammoSource:IHaveAmmo):boolean {
-        return this.internalAmmoConsumer.addAmmoSource(ammoSource);
+    public addResourceProvider(ammoSource:IHaveResource<AmmoType>):boolean {
+        return this.internalAmmoConsumer.addResourceProvider(ammoSource);
     }
 
-    public removeAmmoSource(ammoSource:IHaveAmmo):boolean {
-        return this.internalAmmoConsumer.removeAmmoSource(ammoSource);
+    public removeResourceProvider(ammoSource:IHaveResource<AmmoType>):boolean {
+        return this.internalAmmoConsumer.removeResourceProvider(ammoSource);
     }
 
-    public consumeRounds(roundsRequested:number):number {
-        return this.internalAmmoConsumer.consumeRounds(roundsRequested);
+    public consumeResource(roundsRequested:number):number {
+        return this.internalAmmoConsumer.consumeResource(roundsRequested);
     }
 
     public getTickRate():number {
@@ -299,7 +179,7 @@ export class Loader extends ActivateableComponent implements IHaveAmmo, IUseAmmo
     }
 
     public activate():void {
-        this.consumeRounds(this.maxLoadedRounds - this.internalAmmoProvider.getAvailableRounds(this.getAmmoType()));
+        this.consumeResource(this.maxLoadedRounds - this.internalAmmoProvider.getAvailableResource(this.getResourceType()));
     }
 
     static fromJSON(serialized:LoaderSerialization): Loader {

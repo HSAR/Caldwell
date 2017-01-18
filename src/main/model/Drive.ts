@@ -60,21 +60,6 @@ export class Drive extends ActivateableComponent {
         // TODO: Act on the ship entity in-game
     }
 
-    private static getDriveMappings():[string, any][] {
-        return Array.from(StaticTextCollection.getObjectsById())
-            .filter((idToObjectMapping:[string, any]) => {
-                return idToObjectMapping[0].startsWith(Drive.PREFIX);
-            });
-    }
-
-    public static getDriveMap():Map<string, Drive> {
-        return new Map<string, Drive>(Drive.getDriveMappings());
-    };
-
-    public static getDrives():Drive[] {
-        return Drive.getDriveMappings().map(StaticTextCollection.mappingToValue);
-    };
-
     static fromJSON(serialized:DriveSerialization): Drive {
         return new Drive(
             serialized.id,
