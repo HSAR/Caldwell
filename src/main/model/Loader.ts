@@ -10,52 +10,6 @@ import { AmmoClass, AmmoType } from "./Ammo";
 
 import { StaticTextCollection } from "../util/StaticTextCollection";
 
-export class AmmoBox extends ResourceStorage<AmmoType> implements IHaveResource<AmmoType> {
-
-    constructor(
-        id:string, // must be globally unique
-        name:string,
-
-        slotsUsed:string[], 
-        slotsProvided:string[],
-
-        roundsLoaded:[[string, number]] // Multiple types can be supported. [["ammo_012x099mm", 100], ["ammo_030x173mm_shell", 10]] 
-    ) {
-        super(
-            "loader_ammobox",  // ammo boxes are currently singletons
-            AmmoBox.nameFromRoundsLoaded(roundsLoaded), // name is generated
-            slotsUsed,
-            slotsProvided, 
-            roundsLoaded,
-        );
-        // #TODO: Set the name via this.formatRoundsLoaded();
-    }
-    
-    // @Override
-    public getMass():number {
-        let ammoMass:number = 0;
-        let ammoAvailable:Bag<AmmoType> = this.internalResourceProvider.getAllAvailableResources();
-        // Get the distinct ammo types
-        for (let ammoType of ammoAvailable.toSet().toArray()) {
-            // For each ammo type, sum the mass of that ammo type
-            ammoMass += ammoType.mass * ammoAvailable.count(ammoType);
-        }
-
-        // Total mass of an ammo box is the mass of the ammobox plus the ammo inside
-        return this.data.getMass() + ammoMass;
-    }
-
-    private static nameFromRoundsLoaded(roundsLoaded:[[string, number]]):string {
-        let ammoClasses:Map<string, AmmoClass> = AmmoClass.getAmmoClassMap();
-
-        let result:string[] = [];
-        for (let loading of roundsLoaded) {
-            result.push(`${loading[1]}x ${ammoClasses.get(loading[0]).name}`);
-        }
-        return `Ammo Storage (${result.join(", ")})`;
-    }
-}
-
 export class LoaderSerialization {
 
     public static readonly PREFIX:string = "loader_";

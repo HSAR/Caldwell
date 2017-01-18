@@ -1,9 +1,11 @@
 /// <reference path="../../../typings/index.d.ts" />
 
+import { Bag } from 'typescript-collections';
+
 import { IIdentifiable } from "./General";
 import { Entity } from "../Entity";
 import { ComponentBase, ResourceData } from "./Equippable";
-import { Resource } from "./Resource";
+import { IHaveResource, IUseResource, Resource, ResourceProvider, ResourceConsumer, ResourceStorage } from './Resource';
 
 import { StaticTextCollection } from "../util/StaticTextCollection";
 
@@ -14,12 +16,6 @@ export class AmmoClass {
     constructor(
         public id:string, // must be globally unique
         public name:string,
-        //public mass:number, // kg
-
-        //public firingHeat:number,
-
-        //public damage:number,
-        //public radius:number
     ) {
     }
 
@@ -91,6 +87,53 @@ export class AmmoType extends Resource {
             serialized.damage,
             serialized.radius
         );
+    }
+}
+
+export class AmmoBox extends ResourceStorage<AmmoType> implements IHaveResource<AmmoType> {
+
+    constructor(
+        id:string, // must be globally unique
+        name:string,
+
+        slotsUsed:string[], 
+        slotsProvided:string[],
+
+        roundsLoaded:[[string, number]] // Multiple types can be supported. [["ammo_012x099mm", 100], ["ammo_030x173mm_shell", 10]] 
+    ) {
+        super(
+            "storage_ammo",  // ammo boxes are currently singletons
+            AmmoBox.nameFromRoundsLoaded(roundsLoaded), // name is generated
+            slotsUsed,
+            slotsProvided, 
+            roundsLoaded,
+        );
+    }
+    
+    // @Override
+    public getMass():number {
+        let ammoMass:number = 0;
+        let ammoAvailable:Bag<AmmoType> = this.internalResourceProvider.getAllAvailableResources();
+        // Get the distinct ammo types
+        for (let ammoType of ammoAvailable.toSet().toArray()) {
+            // For each ammo type, sum the mass of that ammo type
+            ammoMass += ammoType.mass * ammoAvailable.count(ammoType);
+        }
+
+        // Total mass of an ammo box is the mass of the ammobox plus the ammo inside
+        return this.data.getMass() + ammoMass;
+    }
+
+    private static nameFromRoundsLoaded(roundsLoaded:[[string, number]]):string {
+        let ammoClasses:Map<string, AmmoClass> = AmmoClass.getAmmoClassMap();
+
+        let result:string[] = [];
+        for (let loading of roundsLoaded) {
+            // Looks like "50x 155mm FRP"
+            result.push(`${loading[1]}x ${ammoClasses.get(loading[0]).name}`);
+        }
+        // Looks like "Ammo Storage (50x 155mm FRP, 450x 30mm, 2000x 12.7mm BMG)"
+        return `Ammo Storage (${result.join(", ")})`;
     }
 }
 
