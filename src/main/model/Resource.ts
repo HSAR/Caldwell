@@ -4,26 +4,26 @@ import { Bag } from 'typescript-collections';
 import * as path from "path";
 
 import { Identifiable, IIdentifiable } from "./General";
-import { ResourceData, SlotConsumer, SlotProvider } from "./Equippable";
+import { ComponentBase, ResourceData, SlotConsumer, SlotProvider } from "./Equippable";
 
 import { StaticTextCollection } from "../util/StaticTextCollection";
 
 export interface IHaveResource<R extends Resource> {
 
     /**
-     * Returns all rounds currently available for immediate feeding.
+     * Returns all resource currently available for immediate supply.
      */
     getAllAvailableResources():Bag<R>;
 
     /**
-     * Returns the number of rounds of a certain type currently available for immediate feeding.
+     * Returns the amount of a certain type of resource available for immediate supply.
      */
     getAvailableResource(resourceType:R):number;
 
     /**
-     * Request roundsRequested rounds of type ammoType. Returns the number of rounds actually supplied.
+     * Request quantityRequested rounds of type resourceType. Returns the amount actually supplied.
      */
-    requestRounds(ammoType:R, roundsRequested:number):number;
+    supplyResource(resourceType:R, quantityRequested:number):number;
 
 }
 
@@ -72,7 +72,7 @@ export class ResourceProvider<R extends Resource> implements IHaveResource<R> {
         return this.getAllAvailableResources().count(resourceType);
     }
 
-    requestRounds(resourceType:R, roundsRequested:number):number {
+    supplyResource(resourceType:R, roundsRequested:number):number {
         // If 5 rounds and 45 are requested, serve 5
         let roundsServed = Math.min(this.getAllAvailableResources().count(resourceType), roundsRequested);
 
@@ -119,7 +119,7 @@ export class ResourceConsumer<R extends Resource> implements IUseResource<R> {
         let roundsServed = 0;
         if (this.resourceType != null) {
             for (let resourceProvider of this.resourceProviders) {
-                roundsServed += resourceProvider.requestRounds(this.resourceType, roundsRequested - roundsServed);
+                roundsServed += resourceProvider.supplyResource(this.resourceType, roundsRequested - roundsServed);
                 if (roundsServed == roundsRequested) {
                     return roundsServed;
                 }
@@ -131,9 +131,43 @@ export class ResourceConsumer<R extends Resource> implements IUseResource<R> {
     
 }
 
-export abstract class Resource extends Identifiable {
+export class ResourceStorage<R extends Resource> extends ComponentBase implements IHaveResource<R> {
 
-    public static readonly PREFIX = "resource_";
+    protected internalResourceProvider:IHaveResource<R>
+
+    constructor(
+        id:string, // must be globally unique
+        name:string,
+
+        private slotsUsed:string[], 
+        private slotsProvided:string[],
+
+        resourcesToLoad:[[string, number]] // Multiple types can be supported. [["ammo_012x099mm", 100], ["ammo_030x173mm_shell", 10]] 
+    ) {
+        super(
+            id,
+            name,
+            new SlotConsumer(slotsUsed),
+            new SlotProvider(slotsProvided), 
+            new ResourceData(0, 0) // Resource storage has dynamic mass (placeholder'd 0) and have 0 power draw
+        );
+        this.internalResourceProvider = new ResourceProvider<R>(resourcesToLoad);
+    }
+
+    public getAllAvailableResources():Bag<R> {
+        return this.internalResourceProvider.getAllAvailableResources();
+    }
+
+    public getAvailableResource(ammoType:R) {
+        return this.internalResourceProvider.getAvailableResource(ammoType);
+    }
+
+    public supplyResource(ammoType:R, roundsRequested:number):number {
+        return this.internalResourceProvider.supplyResource(ammoType, roundsRequested);
+    }
+}
+
+export abstract class Resource extends Identifiable {
 
     public static getClassMap():Map<string, Resource> {
         return new Map<string, Resource>(<[string, Resource][]> Resource.getClassMappings());

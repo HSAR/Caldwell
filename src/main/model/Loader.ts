@@ -5,58 +5,47 @@ import * as path from "path";
 
 import { Entity } from "../Entity";
 import { ActivateableComponent, ActivateableResourceData, ComponentBase, ResourceData, SlotConsumer, SlotProvider } from "./Equippable";
-import { IHaveResource, IUseResource, ResourceProvider, ResourceConsumer } from './Resource';
+import { IHaveResource, IUseResource, ResourceProvider, ResourceConsumer, ResourceStorage } from './Resource';
 import { AmmoClass, AmmoType } from "./Ammo";
 
 import { StaticTextCollection } from "../util/StaticTextCollection";
 
-export class AmmoBox extends ComponentBase implements IHaveResource<AmmoType> {
-
-    private internalAmmoProvider:IHaveResource<AmmoType>
+export class AmmoBox extends ResourceStorage<AmmoType> implements IHaveResource<AmmoType> {
 
     constructor(
         id:string, // must be globally unique
         name:string,
 
-        private slotsUsed:string[], 
-        private slotsProvided:string[],
+        slotsUsed:string[], 
+        slotsProvided:string[],
 
         roundsLoaded:[[string, number]] // Multiple types can be supported. [["ammo_012x099mm", 100], ["ammo_030x173mm_shell", 10]] 
     ) {
         super(
             "loader_ammobox",  // ammo boxes are currently singletons
-            name,
-            new SlotConsumer(slotsUsed),
-            new SlotProvider(slotsProvided), 
-            new ResourceData(0, 0) // Ammo boxes have dynamic mass (placeholder'd 0) and have 0 power draw
+            AmmoBox.nameFromRoundsLoaded(roundsLoaded), // name is generated
+            slotsUsed,
+            slotsProvided, 
+            roundsLoaded,
         );
-        this.internalAmmoProvider = new ResourceProvider<AmmoType>(roundsLoaded);
         // #TODO: Set the name via this.formatRoundsLoaded();
     }
     
     // @Override
     public getMass():number {
-        // Mass of an ammo box is the mass of the box plus ammo within
-        let ammoMass = 0;
-        for (let ammoType of this.internalAmmoProvider.getAllAvailableResources().toArray()) {
-            ammoMass += ammoType.mass;
+        let ammoMass:number = 0;
+        let ammoAvailable:Bag<AmmoType> = this.internalResourceProvider.getAllAvailableResources();
+        // Get the distinct ammo types
+        for (let ammoType of ammoAvailable.toSet().toArray()) {
+            // For each ammo type, sum the mass of that ammo type
+            ammoMass += ammoType.mass * ammoAvailable.count(ammoType);
         }
+
+        // Total mass of an ammo box is the mass of the ammobox plus the ammo inside
         return this.data.getMass() + ammoMass;
     }
 
-    public getAllAvailableResources():Bag<AmmoType> {
-        return this.internalAmmoProvider.getAllAvailableResources();
-    }
-
-    public getAvailableResource(ammoType:AmmoType) {
-        return this.internalAmmoProvider.getAvailableResource(ammoType);
-    }
-
-    public requestRounds(ammoType:AmmoType, roundsRequested:number):number {
-        return this.internalAmmoProvider.requestRounds(ammoType, roundsRequested);
-    }
-
-    private static formatRoundsLoaded(roundsLoaded:[[string, number]]):string {
+    private static nameFromRoundsLoaded(roundsLoaded:[[string, number]]):string {
         let ammoClasses:Map<string, AmmoClass> = AmmoClass.getAmmoClassMap();
 
         let result:string[] = [];
@@ -143,8 +132,8 @@ export class Loader extends ActivateableComponent implements IHaveResource<AmmoT
         return this.internalAmmoProvider.getAvailableResource(ammoType);
     }
 
-    public requestRounds(ammoType:AmmoType, roundsRequested:number):number {
-        return this.internalAmmoProvider.requestRounds(ammoType, roundsRequested);
+    public supplyResource(ammoType:AmmoType, roundsRequested:number):number {
+        return this.internalAmmoProvider.supplyResource(ammoType, roundsRequested);
     }
 
     public getResourceType():AmmoType {

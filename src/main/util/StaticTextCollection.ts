@@ -9,7 +9,6 @@ import * as _ from "lodash";
 import * as ex from "excalibur";
 
 import { IIdentifiable } from "../model/General";
-import { AmmoType } from "../model/Ammo";
 
 export class StaticTextCollection {
 
