@@ -28,19 +28,19 @@ export class Identifiable implements IIdentifiable {
         return this.name;
     }
 
-    protected static getClassMappings():[string, IIdentifiable][] {
+    protected static getClassMappings<T>():[string, T][] {
         return Array.from(StaticTextCollection.getObjectsById())
-            .filter((idToObjectMapping:[string, IIdentifiable]) => {
+            .filter((idToObjectMapping:[string, any]) => {
                 return idToObjectMapping[0].startsWith(this.PREFIX + "_");
             });
     }
 
-    public static getClassMap():Map<string, IIdentifiable> {
-        return new Map<string, IIdentifiable>(Identifiable.getClassMappings());
+    public static getClassMap<T>():Map<string, T> {
+        return new Map<string, T>(Identifiable.getClassMappings<T>());
     };
 
-    public static getClassList():IIdentifiable[] {
-        return Identifiable.getClassMappings().map(StaticTextCollection.mappingToValue);
+    public static getClassList<T>():T[] {
+        return Identifiable.getClassMappings<T>().map(StaticTextCollection.mappingToValue);
     };
 
 }
