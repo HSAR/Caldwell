@@ -231,7 +231,7 @@ export abstract class ComponentBase extends Identifiable implements IResourceabl
     /**
      * All implementing classes should override this property to a class-unique value.
      */
-    public static readonly PREFIX = "base";
+    public static readonly PREFIX:string = "base";
 
     constructor(
         id:string, // must be globally unique

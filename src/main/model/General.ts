@@ -12,7 +12,7 @@ export class Identifiable implements IIdentifiable {
     /**
      * All implementing classes should override this property to a class-unique value.
      */
-    public static readonly PREFIX = "id";
+    public static readonly PREFIX:string = "id";
 
     constructor(
         private id:string, // must be globally unique
