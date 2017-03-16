@@ -9,7 +9,7 @@ var getImageOutline = require("image-outline");
 var hull = require("hull.js");
 
 import { PhysicsWorld } from "./physics";
-import { StaticBitmapCollection } from "./util/StaticBitmap";
+import { StaticBitmapCollection } from "./util/StaticBitmapCollection";
 
 export enum SupportedShape { Box, Convex, Concave };
 
@@ -195,7 +195,7 @@ export class EntityBuilder {
     }
 
     private createCollisionFromBitmap(collisionBody:Body, pathToImage:string):Promise<void> {
-        return new Promise((resolve,reject) => {
+        return new Promise<void>((resolve,reject) => {
             getImageOutline(pathToImage, (err:any, outline:{x:number, y:number}[]) => {
                 if (err) {
                     reject(err);

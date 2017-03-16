@@ -2,6 +2,8 @@
 /// <reference path="../../../node_modules/excalibur/dist/excalibur.d.ts" />
 
 import { ActivateableComponent, ActivateableResourceData, SlotConsumer, SlotProvider } from "./Equippable";
+import { FuelType } from "./Fuel";
+import { IHaveResource, IUseResource, ResourceProvider, ResourceConsumer, ResourceStorage } from './Resource';
 
 import { StaticTextCollection } from "../util/StaticTextCollection";
 
@@ -22,9 +24,11 @@ export class DriveSerialization {
     }
 }
 
-export class Drive extends ActivateableComponent {
+export class Drive extends ActivateableComponent implements IUseResource<FuelType> {
 
     public static readonly PREFIX:string = "thruster_";
+
+    private internalFuelConsumer:IUseResource<FuelType>;
 
     constructor(
         id:string, // must be globally unique
@@ -53,11 +57,36 @@ export class Drive extends ActivateableComponent {
     }
 
     public activate():void {
-        if (this.internalAmmoConsumer.consumeRounds(1) < 1) { // TODO: Model fuel(!)
+        if (this.internalFuelConsumer.consumeResource(1) < 1) { // TODO: Model fuel(!)
             // TODO: Cut thrust!
             return;
         }
         // TODO: Act on the ship entity in-game
+    }
+
+    public getResourceType():FuelType {
+        return this.internalFuelConsumer.getResourceType();
+    }
+
+    public setResourceType(fuelType:FuelType):boolean {
+        // Weapons cannot change their ammo class (this may change)
+        return this.internalFuelConsumer.setResourceType(fuelType);
+    }
+
+    public getResourceProviders():IHaveResource<FuelType>[] {
+        return this.internalFuelConsumer.getResourceProviders();
+    }
+
+    public addResourceProvider(ammoSource:IHaveResource<FuelType>):boolean {
+        return this.internalFuelConsumer.addResourceProvider(ammoSource);
+    }
+
+    public removeResourceProvider(ammoSource:IHaveResource<FuelType>):boolean {
+        return this.internalFuelConsumer.removeResourceProvider(ammoSource);
+    }
+
+    public consumeResource(fuelRequested:number):number {
+        return this.internalFuelConsumer.consumeResource(fuelRequested);
     }
 
     static fromJSON(serialized:DriveSerialization): Drive {

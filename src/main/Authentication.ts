@@ -59,7 +59,7 @@ export class Authentication {
                             });
                     });
             case IdentityProvider.Google:
-                return oauth2_auth.authenticate(new oauth2_auth.ConfigList.GoogleConfig(), windowParams, "profile")
+                return oauth2_auth.authenticate(new oauth2_auth.ConfigList.GoogleConfig(), windowParams)
                     .then((token:any) => {
                         console.log("Token fetch complete.");
                         console.log(JSON.stringify(token));

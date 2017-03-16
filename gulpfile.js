@@ -11,7 +11,13 @@ var _testRoot = path.join(__dirname, "build", "src", "test");
 gulp.task("build", function () {
     var tsResult = gulp.src("src/**/*.ts")
         .pipe(sourcemaps.init())
-        .pipe(ts({}));
+        .pipe(ts({
+        "sourceMap": true,
+        "noImplicitAny": false,
+        "target": "es6",
+        "module": "commonjs",
+        "outDir": "./build"    
+    }));
     return tsResult.js
         .pipe(sourcemaps.write())
         .pipe(gulp.dest("build"));
