@@ -1,0 +1,7 @@
+before_script:
+  - npm install -g github:gulpjs/gulp#4.0
+  - npm install -g typings
+install:
+  - npm install
+  - typings install
+script: gulp
