@@ -50,8 +50,8 @@ game.start(loader).then(() => {
     // Gun
     var gun:Entity;
     new EntityBuilder()
-        .addSprite(bitmaps, "stoner63.png")
-        .setSize(180, 0)
+        .addSprite(bitmaps, "crosshairs.png")
+        .setSize(180, 20)
         .setPosition(new Vector(game.getWidth() / 4, game.getHeight() / 2))
         .setPhysics(physics, SupportedShape.Concave, 0)
         .build().then((entity:Entity) => {

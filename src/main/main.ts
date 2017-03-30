@@ -33,35 +33,22 @@ app.on('ready', function() {
         }
     };
 
-    Authentication.requestUserAuthenticate(IdentityProvider.Google, windowParams)
-        .then((userProfile:AuthenticatedUser) => {
-            // set user profile as a global object
-            console.log("User profile fetch complete.")
-            console.log(JSON.stringify(userProfile));
-            global['profile'] = userProfile;
+    // Create the browser window.
+    mainWindow = new BrowserWindow({width: 800, height: 600});
 
-            // Create the browser window.
-            mainWindow = new BrowserWindow({width: 800, height: 600});
+    // and load the index.html of the app.
+    mainWindow.loadURL(`file://${__dirname}/index.html`);
 
-            // and load the index.html of the app.
-            mainWindow.loadURL(`file://${__dirname}/index.html`);
+    // Open the DevTools.
+    // mainWindow.webContents.openDevTools();
 
-            // Open the DevTools.
-            // mainWindow.webContents.openDevTools();
-
-            // Emitted when the window is closed.
-            mainWindow.on('closed', function() {
-                // Dereference the window object, usually you 
-                // would store windows in an array if your 
-                // app supports multi windows, this is the time
-                // when you should delete the corresponding element.
-                mainWindow = null;
-                console.log("Caldwell closed.");
-            });
-        })
-        .catch((error) => {
-            console.log("Auth failed.");
-            console.log(error);
-            //mainWindow = null;
-        });
+    // Emitted when the window is closed.
+    mainWindow.on('closed', function() {
+        // Dereference the window object, usually you 
+        // would store windows in an array if your 
+        // app supports multi windows, this is the time
+        // when you should delete the corresponding element.
+        mainWindow = null;
+        console.log("Caldwell closed.");
+    });
 });
