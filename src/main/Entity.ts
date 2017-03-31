@@ -95,7 +95,7 @@ export class EntityBuilder {
             return this;
         }
 
-        let sprite:Sprite = bitmaps.getTexture(textureRef).asSprite();
+        let sprite:Sprite = bitmaps.getTexture(textureRef).asSprite().clone();
 
         this.result.addDrawing(sprite);
         this.result.textureRef = textureRef;
