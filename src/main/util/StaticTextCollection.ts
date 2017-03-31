@@ -16,10 +16,10 @@ export class StaticTextCollection {
     private static objectsById:Map<string, any> = new Map<string, any>();
 
     constructor(jsonFolderPath:string) {
-        // Create textures from all .json files in the given folder
+        // Create Resource objects from all .json files in the given folder
         let jsonFolderGlob:string = path.join(jsonFolderPath, "**", "*.json");
         let jsonPaths:string[] = glob.sync(jsonFolderGlob);
-        console.log(`Found ${jsonPaths.length} textures to load.`)
+        console.log(`Found ${jsonPaths.length} JSON files to load.`)
 
         for (let jsonPath of jsonPaths) {
             let relPath:string = path.relative(jsonFolderPath, jsonPath)
