@@ -84,7 +84,7 @@ export class EntityBuilder {
      */
     public setSize(width:number, height:number):EntityBuilder {
         this.desiredWidth = width;
-        this.desiredHeight = height;
+        this.desiredHeight = height;        
         return this;
     }
 
@@ -152,6 +152,10 @@ export class EntityBuilder {
             scaleY = scaleX;
         }
         result.scale.setTo(scaleX, scaleY);
+
+        // Also set sprite scale, this is a workaround for https://github.com/excaliburjs/Excalibur/issues/770
+        // #TODO: Remove this when issue is fixed (should be excaliburjs@0.10.0)
+        result.currentDrawing.scale.setTo(scaleX, scaleY);
     }
 
     private async buildPhysics(result:Entity):Promise<void> {

@@ -50,13 +50,11 @@ game.start(loader).then(() => {
     // Gun
     var gun:Entity;
     new EntityBuilder()
-        .addSprite(bitmaps, "crosshairs.png")
-        .setSize(200, 200)
-        .setPosition(new Vector(game.getWidth() / 2, game.getHeight() / 2))
+        .addSprite(bitmaps, "stoner63.png")
+        .setSize(180, 0)
+        .setPosition(new Vector(game.getWidth() / 4, game.getHeight() / 2))
         .setPhysics(physics, SupportedShape.Concave, 0)
-        .build().then((entity:Entity) => {
-            entity.currentDrawing.scale.setTo(.8, .1);
-            
+        .build().then((entity:Entity) => {            
             gun = entity;
             game.add(gun);
         });
