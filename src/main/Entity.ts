@@ -84,7 +84,7 @@ export class EntityBuilder {
      */
     public setSize(width:number, height:number):EntityBuilder {
         this.desiredWidth = width;
-        this.desiredHeight = height;        
+        this.desiredHeight = height;
         return this;
     }
 
@@ -152,10 +152,6 @@ export class EntityBuilder {
             scaleY = scaleX;
         }
         result.scale.setTo(scaleX, scaleY);
-
-        // Also set sprite scale, this is a workaround for https://github.com/excaliburjs/Excalibur/issues/770
-        // #TODO: Remove this when issue is fixed (should be excaliburjs@0.10.0)
-        result.currentDrawing.scale.setTo(scaleX, scaleY);
     }
 
     private async buildPhysics(result:Entity):Promise<void> {
@@ -192,14 +188,16 @@ export class EntityBuilder {
                 collisionBody.addShape(collisionShape);
                 return Promise.resolve();
             case SupportedShape.Concave:
-                return this.createCollisionFromBitmap(collisionBody, this.bitmaps.getTexture(result.textureRef).path);
+                return this.createCollisionFromBitmap(collisionBody, this.bitmaps.getTexture(result.textureRef).path)
+                        .then(() => {
+                        });
             default:
                 return Promise.reject(new Error("Unsupported physics shape"));
         }
     }
 
-    private createCollisionFromBitmap(collisionBody:Body, pathToImage:string):Promise<void> {
-        return new Promise<void>((resolve,reject) => {
+    private createCollisionFromBitmap(collisionBody:Body, pathToImage:string):Promise<{}> {
+        return new Promise((resolve,reject) => {
             getImageOutline(pathToImage, (err:any, outline:{x:number, y:number}[]) => {
                 if (err) {
                     reject(err);

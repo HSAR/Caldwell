@@ -52,9 +52,9 @@ game.start(loader).then(() => {
     new EntityBuilder()
         .addSprite(bitmaps, "stoner63.png")
         .setSize(180, 0)
-        .setPosition(new Vector(game.getWidth() / 4, game.getHeight() / 2))
+        .setPosition(new Vector(game.canvasWidth / 4, game.canvasHeight / 2))
         .setPhysics(physics, SupportedShape.Concave, 0)
-        .build().then((entity:Entity) => {            
+        .build().then((entity:Entity) => {
             gun = entity;
             game.add(gun);
         });

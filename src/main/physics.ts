@@ -24,7 +24,7 @@ export class PhysicsWorld {
         // Add the ground
         var groundBody = new Body({
             mass: 0, // Setting mass to 0 makes it static
-            position: [0, game.getHeight()],
+            position: [0, game.canvasHeight],
             angle: Math.PI
         });
         groundBody.addShape(new p2.Plane());
